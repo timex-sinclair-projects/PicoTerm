@@ -1,8 +1,8 @@
 ; main.asm - PicoTerm entry point
 ;
-; M0: take over the machine (own stack, IM2), show a banner and some
-; start-up facts, count interrupts until a key is pressed, then give the
-; machine back to BASIC as it was.
+; M1: take over the machine (DF2 opened, own stack, IM2), then run a local
+; "typewriter": keys go through the key map and straight into the TTY
+; emulation. BREAK (CAPS SHIFT + SPACE) gives the machine back to BASIC.
 
         INCLUDE "mem.inc"
 
@@ -16,51 +16,73 @@ start:
         ld (saved_hl2),hl           ; BASIC needs HL' back
         exx
         ld sp,STACK_TOP
+        call font_init              ; copies the ROM font through CHARS
         call isr_install
         ei
 
         xor a
         out (PORT_ULA),a            ; black border
-        call vid32_cls
-
+        ld a,07h
+        ld (cur_attr),a
+        call vid_init
+        call term_reset
         ld hl,msg_banner
-        call vid32_puts
+        call term_puts
 
-        ld hl,msg_rom
-        call vid32_puts
-        ld a,(ROM_VERSION)
-        call vid32_hex8
-
-        ld hl,msg_vidmod
-        call vid32_puts
-        ld a,(SV_VIDMOD)
-        call vid32_hex8
-        ld hl,msg_chans
-        call vid32_puts
-        ld hl,(SV_CHANS)
-        call vid32_hex16
-        ld hl,msg_mstbot
-        call vid32_puts
-        ld hl,(SV_MSTBOT)
-        call vid32_hex16
-
-        ld hl,msg_ticks
-        call vid32_puts
-
-        call wait_no_key
-.loop:
-        ld bc,TICKS_POS
-        call vid32_at
+main_loop:
+        call kbd_get
+        jr z,.idle
+        cp K_MENU
+        jr z,exit
+        call local_key
         ld hl,(ticks)
-        call vid32_hex16
-        call any_key
-        jr z,.loop
+        ld (blink_base),hl
+        jr main_loop
+.idle:
+        call cursor_blink
+        jr main_loop
 
-        call wait_no_key
-        ; fall through
+; local_key: the typewriter: show key A as the far end would echo it.
+local_key:
+        cp K_ENTER
+        jr nz,.notenter
+        ld a,0Dh
+        call term_putc
+        ld a,0Ah
+        jp term_putc
+.notenter:
+        cp K_BACKSPACE
+        jr nz,.notbs
+        ld hl,bs_echo
+        jp term_puts
+.notbs:
+        cp 80h
+        ret nc                      ; arrows: sent to the modem from M2 on
+        jp term_putc
+
+; cursor_blink: the cursor shows for 32 frames and hides for 32, starting
+; shown whenever something was typed.
+cursor_blink:
+        ld hl,(ticks)
+        ld de,(blink_base)
+        or a
+        sbc hl,de
+        bit 5,l
+        jp z,vid_cursor_on
+        jp vid_cursor_off
 
 ; exit: restore everything BASIC relies on and return to it, USR = 0.
 exit:
+        xor a                       ; wait for BREAK to be let go, or the
+        in a,(PORT_ULA)             ; ROM sees it and stops with report D
+        cpl
+        and 1Fh
+        jr nz,exit
+        call vid_cursor_off
+        ld a,(SV_ATTR_P)
+        ld (cur_attr),a
+        ld de,0+VID_ROWS-1
+        call vid_clear_rows
         call isr_remove
         ld a,(SV_BORDCR)
         rrca
@@ -77,36 +99,29 @@ exit:
         ei
         ret
 
-; any_key: NZ if any key is down.
-any_key:
-        xor a                       ; all half-rows
-        in a,(PORT_ULA)
-        cpl
-        and 1Fh
-        ret
-
-wait_no_key:
-        call any_key
-        jr nz,wait_no_key
-        ret
-
         INCLUDE "hw/isr.asm"
         INCLUDE "hw/scld.asm"
+        INCLUDE "hw/kbd.asm"
+        INCLUDE "video/font.asm"
+        INCLUDE "video/vid.asm"
         INCLUDE "video/vid32.asm"
+        INCLUDE "term/tty.asm"
 
-TICKS_POS       equ 070Ch           ; row 7, column 12: after "Interrupts: "
-
-msg_banner:     db "PicoTerm M0",13
-                db "TS-2068 terminal for TS-Pico",13,13,0
-msg_rom:        db "ROM byte 0065h: ",0
-msg_vidmod:     db 13,"VIDMOD ",0
-msg_chans:      db "  CHANS ",0
-msg_mstbot:     db 13,"MSTBOT ",0
-msg_ticks:      db 13,13,"Interrupts: ",13,13
-                db "Press a key to return to BASIC",0
+msg_banner:     db "PicoTerm M1 - local typewriter",13,10
+                db "BREAK returns to BASIC",13,10,10,0
+bs_echo:        db 08h," ",08h,0
 
 saved_sp:       dw 0
 saved_hl2:      dw 0
+blink_base:     dw 0
 
 end_of_code:
-        ASSERT end_of_code <= CODE_LIMIT, "Code runs into the stack"
+
+; --- uninitialised data, not in the binary --------------------------------
+
+FONT            equ (end_of_code + 255) & 0FF00h    ; 2 KB, page-aligned
+SHADOW_CHR      equ FONT + 2048
+SHADOW_ATR      equ SHADOW_CHR + MAX_CELLS
+BSS_END         equ SHADOW_ATR + MAX_CELLS
+
+        ASSERT BSS_END <= CODE_LIMIT, "Data runs into the stack"

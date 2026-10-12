@@ -347,6 +347,14 @@ itself and maps keys. This first assignment follows the 2068's own key legends w
 | SYMBOL SHIFT + key | the key's ASCII symbol, with the BASIC keywords replaced: SS+A `~`, SS+S `\|`, SS+D `\`, SS+F `{`, SS+G `}`, SS+Y `[`, SS+U `]`, SS+H `^`, SS+X `` ` `` (instead of `£`), SS+Q/W/E unused |
 | CAPS + SPACE (BREAK) | **PicoTerm menu** |
 
+How the scan behaves (M1):
+- One key is read per frame, and the shifts count only as modifiers.
+- A held key repeats after 30 frames, then every 3.
+- Pressing or releasing a shift while a key is held doesn't type that key again. Without
+  this, letting go of CAPS SHIFT after a capital typed an extra lower-case letter.
+- The Ctrl prefix is a toggle: pressing CAPS SHIFT + SYMBOL SHIFT twice cancels it.
+- Showing CTRL and CAPS LOCK on screen waits for the status bar (M5).
+
 The menu holds:
 
 - Dial (the phonebook);

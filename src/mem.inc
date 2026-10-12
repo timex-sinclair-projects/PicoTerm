@@ -21,6 +21,7 @@ ROM_VERSION     equ 0065h           ; HOME ROM byte: 23h = TS-Pico ROM 2.3
 SV_CHARS        equ 5C36h           ; font address - 256
 SV_BORDCR       equ 5C48h           ; border colour in bits 3-5
 SV_CHANS        equ 5C4Fh
+SV_ATTR_P       equ 5C8Dh           ; BASIC's permanent colours
 SV_STKEND       equ 5C65h           ; end of BASIC's calculator stack
 SV_IY           equ 5C3Ah           ; IY must hold this when BASIC runs
 SV_MSTBOT       equ 5CC0h           ; machine stack base / dispatcher entry

@@ -32,11 +32,16 @@ isr_remove:
 
 isr:
         push af
+        push bc
+        push de
         push hl
         ld hl,(ticks)
         inc hl
         ld (ticks),hl
+        call kbd_scan
         pop hl
+        pop de
+        pop bc
         pop af
         ei
         reti

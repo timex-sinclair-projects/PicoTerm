@@ -1,4 +1,4 @@
-"""Run picoterm.tap in a headless ZEsarUX TS-2068. Skipped without ZEsarUX."""
+"""Start-up and exit in a headless ZEsarUX TS-2068. Skipped without ZEsarUX."""
 
 import os
 import time
@@ -12,14 +12,13 @@ SYM = os.path.join(ROOT, "build", "picoterm.sym")
 
 
 @unittest.skipUnless(find_zesarux(), "ZEsarUX not installed")
-class EmulatorTest(unittest.TestCase):
-    def test_m0_start_tick_and_exit(self):
+class StartupTest(unittest.TestCase):
+    def test_start_tick_and_exit(self):
         sym = symbols(SYM)
         with Emulator() as emu:
             emu.wait_for_text("Sinclair")           # the 2068 has started
             emu.load(TAP)
-            screen = emu.wait_for_text("PicoTerm M0")
-            self.assertIn("Press a key", screen)
+            emu.wait_for_text("PicoTerm M1")
 
             # CHNG_VID moved BASIC and the ROM's stack out of DF2.
             self.assertEqual(emu.peek(0x5CC2)[0], 0x80)     # VIDMOD
@@ -32,8 +31,8 @@ class EmulatorTest(unittest.TestCase):
             b = emu.peek16(sym["ticks"])
             self.assertGreater((b - a) & 0xFFFF, 30)
 
-            # A key returns to BASIC cleanly.
-            emu.keys(" ")
+            # BREAK returns to BASIC cleanly.
+            emu.press(emu.KEY_SPACE, emu.KEY_CAPS)
             screen = emu.wait_for_text("0 OK")
             regs = emu.cmd("get-registers")
             self.assertIn("IM1", regs)

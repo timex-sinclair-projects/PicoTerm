@@ -121,6 +121,26 @@ class Emulator:
         lo, hi = self.peek(addr, 2)
         return lo | hi << 8
 
+    # ZEsarUX key codes for send-keys-event (utils.h, enum util_teclas)
+    KEY_SPACE = 128
+    KEY_ENTER = 129
+    KEY_CAPS = 133          # left Shift: CAPS SHIFT
+    KEY_SYM = 138           # left Ctrl: SYMBOL SHIFT
+
+    def press(self, key, *mods, hold=0.12):
+        """Press one matrix key (a lower-case letter, a digit or a KEY_
+        code) with CAPS/SYMBOL SHIFT held, then let everything go."""
+        code = key if isinstance(key, int) else ord(key)
+        for m in mods:
+            self.cmd(f"send-keys-event {m} 1")
+        time.sleep(0.04 if mods else 0)
+        self.cmd(f"send-keys-event {code} 1")
+        time.sleep(hold)
+        self.cmd(f"send-keys-event {code} 0")
+        for m in mods:
+            self.cmd(f"send-keys-event {m} 0")
+        time.sleep(0.06)
+
     def keys(self, text, ms=100):
         return self.cmd(f"send-keys-ascii {ms} " + " ".join(str(ord(c)) for c in text))
 

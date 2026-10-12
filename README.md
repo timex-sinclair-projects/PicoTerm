@@ -5,8 +5,8 @@ Zimodem. It talks to the card's 8251 at ports $73/$77 as a Hayes modem over WiFi
 and 64-column displays, PicoVideo's 80 columns, ANSI-BBS/VT52/TTY emulation and XMODEM
 downloads to the TS-Pico's SD card.
 
-The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M0** (toolchain and a start-up
-test program).
+The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M1**, a local typewriter: the
+32-column screen, the keyboard map and TTY emulation, with no modem yet.
 
 ## Building
 
@@ -36,6 +36,9 @@ Or open the TAP in an emulator set to a TS-2068.
 make test
 ```
 
-`tests/test_tap.py` checks the TAP. `tests/test_emulator.py` runs it in a headless ZEsarUX
-TS-2068 over ZRCP and is skipped if ZEsarUX isn't installed. Set `$ZESARUX` to the binary,
+`tests/test_tap.py` checks the TAP. The emulator tests run PicoTerm in a headless ZEsarUX
+TS-2068 over ZRCP, and are skipped if ZEsarUX isn't installed:
+- `test_startup.py` covers start-up and the return to BASIC.
+- `test_typewriter.py` covers the keyboard, the TTY emulation and the screen. It presses keys
+  on the emulated matrix, and checks the screen both in memory and through ZEsarUX's OCR. Set `$ZESARUX` to the binary,
 and `$ZESARUX_ROM` to use another ROM such as `TSPICO-23.ROM`.
