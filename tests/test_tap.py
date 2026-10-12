@@ -7,7 +7,7 @@ import unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TAP = os.path.join(ROOT, "build", "picoterm.tap")
 BIN = os.path.join(ROOT, "build", "picoterm.bin")
-ORG = 0x8000
+ORG = 0x8800
 
 
 def blocks(data):
@@ -42,8 +42,8 @@ class TapTest(unittest.TestCase):
         body = prog[1:-1]
         self.assertEqual(len(body), length)
         self.assertEqual(body[:2], b"\x00\x0a")  # line 10
-        self.assertIn(b"\xfd32767\x0e\x00\x00\xff\x7f\x00", body)       # CLEAR 32767
-        self.assertIn(b"\xf9\xc032768\x0e\x00\x00\x00\x80\x00", body)   # RANDOMIZE USR 32768
+        self.assertIn(b"\xfd34815\x0e\x00\x00\xff\x87\x00", body)       # CLEAR 34815
+        self.assertIn(b"\xf9\xc034816\x0e\x00\x00\x00\x88\x00", body)   # RANDOMIZE USR 34816
         self.assertEqual(body[-1], 0x0D)
 
     def test_code(self):

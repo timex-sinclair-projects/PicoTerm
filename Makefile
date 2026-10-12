@@ -3,7 +3,8 @@
 SJASMPLUS ?= sjasmplus
 PYTHON    ?= python3
 
-ORG   := 0x8000
+# Above STKEND + 1B00h, which CHNG_VID needs free (src/hw/scld.asm).
+ORG   := 0x8800
 BUILD := build
 SRC   := $(shell find src -name '*.asm' -o -name '*.inc')
 

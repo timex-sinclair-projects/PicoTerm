@@ -16,7 +16,7 @@ Needs [sjasmplus](https://github.com/z00m128/sjasmplus) (1.20 or later) and Pyth
 make
 ```
 
-The output is `build/picoterm.tap` (a BASIC loader and the code at 8000h), plus
+The output is `build/picoterm.tap` (a BASIC loader and the code at 8800h), plus
 `build/picoterm.bin`, `.sym` and `.lst`.
 
 ## Running

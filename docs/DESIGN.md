@@ -15,6 +15,9 @@ Background is in [reference/](reference/):
   ports 14/15, which we use for files.
 - [picovideo-howto.md](reference/picovideo-howto.md): PicoVideo modes 5 and 7.
 - [emulators.md](reference/emulators.md): ZEsarUX/Fuse with `pico_host`.
+- The TS2068 reference library (David's local repo, `TS2068 Ref Library`): the Technical
+  Manual in Markdown, the memory map, `CHNG_VID`, and the annotated Zebra OS-64
+  disassembly.
 
 Statements marked **(to verify)** need a test on the card or an answer from another project.
 
@@ -54,23 +57,58 @@ Dropped or changed:
 
 ## 3. Memory map
 
+PicoTerm opens the second display file with the ROM's **Video Mode Change Service**
+(`CHNG_VID`, EXROM 0E8Eh; Technical Manual 3.2.2.3), the same way Zebra's OS-64 does. On a
+2068 the area 6000h-7AFFh normally holds the ROM's machine stack (6000h-61FFh), its RAM
+dispatcher (6200h-682Fh), the channel data (CHANS, 6840h) and the start of BASIC (PROG,
+6856h). `CHNG_VID` moves all of these out of the way:
+- CHANS and PROG move up 12C0h, to 7B00h and 7B16h.
+- The stack and the dispatcher move to F7C0h-FFFFh, and MSTBOT becomes F9C0h.
+- The UDGs move down to F718h.
+
+PicoTerm calls it once at start-up with mode **80h** (both display files available, DF1
+shown), and leaves the file open, for these reasons:
+- BASIC works normally while the file is open.
+- CLOSE-DFILE has a bad reputation.
+- Leaving it open makes 64 columns a single DECR write at any time.
+- It frees 6000h-7AFFh as scratch RAM in the 32- and 80-column modes.
+
+Measured in ZEsarUX on the stock ROM: after the call, CHANS = 7B00h, PROG = 7B16h,
+MSTBOT = F9C0h and VIDMOD = 80h, and BASIC runs (`PRINT 7`, 0 OK).
+
 | Address | Use |
 |---|---|
 | 0000-3FFF | ROM (HOME). Not called while PicoTerm runs. |
 | 4000-57FF | DF1 bitmap (32/64 col). In 80 col: character codes 4000-477F, attributes 4780-4EFF. |
 | 5800-5AFF | DF1 attributes (32 col; 64 col on PicoVideo mode 7, **to verify**) |
 | 5B00-5FFF | System variables and TS-Pico ROM variables (TPMODE at 5DDBh). Left alone. |
-| 6000-77FF | DF2 bitmap, used **only in 64-column mode**. On the 2068 this is also where BASIC lives: CHANS is at 6840h and PROG at 6856h (measured in M0), so 64-column mode saves 6000h..STKEND (about 2.2 KB) and puts it back before returning to BASIC or leaving 64 columns. |
-| 7800-7AFF | DF2 attributes (PicoVideo mode 7, **to verify**) |
-| 7B00-7FFF | Free / BASIC's machine stack below RAMTOP |
-| 8000- | PicoTerm code, then data (below) |
-| FC00-FCFF | Our stack |
-| FD00-FE00 | IM2 vector table (257 bytes of FEh) |
-| FEFE | IM2 handler entry (`JP isr`) |
+| 6000-77FF | DF2 bitmap: the odd columns in 64-column mode, scratch RAM otherwise |
+| 7800-7AFF | DF2 attributes (PicoVideo mode 7, **to verify**); scratch otherwise |
+| 7B00-87FF | BASIC after the move: CHANS, the loader, its variables, workspace |
+| 8800-F3FF | PicoTerm code, then data (below): 27 KB |
+| F400-F4FF | Our stack |
+| F500-F600 | IM2 vector table (257 bytes of F6h) |
+| F6F6 | IM2 handler entry (`JP isr`) |
+| F718-F7BF | UDGs (moved by `CHNG_VID`) |
+| F7C0-FFFF | The ROM's machine stack and dispatcher (moved by `CHNG_VID`) |
 
-The loader is `CLEAR 32767: LOAD "" CODE: RANDOMIZE USR 32768`. PicoTerm never calls the
-ROM, so BASIC's data in the DF2 area only has to survive until exit, not be usable while the
-program runs.
+The loader is `CLEAR 34815: LOAD "" CODE: RANDOMIZE USR 34816`. The code starts at 8800h
+rather than 8000h because `CHNG_VID` needs RAMTOP above STKEND + 12C0h + 840h, which is
+about 8380h with the loader in memory. Without that room it stops with
+"4 Out of memory", before PicoTerm has changed anything.
+
+**On the TS-Pico ROM 2.3:**
+- Its EXROM has `CHNG_VID` and OPEN/CLOSE-DFILE byte-identical to the genuine ROM.
+- Its relocation table at 1D00h has the community fix for the four entries that were one
+  byte off. Those are the only four bytes that differ in the table.
+- PicoTerm enters the EXROM as the Technical Manual does: HSR = 1, DECR bit 7 set. The
+  TS-Pico's EXROM is 16 KB (HSR mask 3), but `CHNG_VID` is in its first 8 KB.
+
+**To verify on the card:** stock ZEsarUX doesn't finish booting the TS-Pico ROM, so the call
+hasn't run on that ROM yet.
+
+DECR (port FFh) is always written as the ROMs do it: read the port, keep bit 7 (EXROM
+select), OR in the mode. Bit 6 stays 0 so the frame interrupt keeps running.
 
 Data, roughly:
 
@@ -85,7 +123,7 @@ Data, roughly:
 | TS-Pico command buffer (hex `chwr` text) | 300 |
 | Settings, parser state, line buffers | < 1 KB |
 
-That fits in 8000h-FBFFh with room left for a small scrollback later.
+That fits in 8800h-F3FFh. DF2 (6.9 KB) is spare in 32- and 80-column modes, for a scrollback later.
 
 ## 4. Structure
 
@@ -98,7 +136,7 @@ src/
     acia.asm        8251: reset, tx with timeout, drain to ring, error reset
     pico.asm        TS-Pico protocol (adapted from the firmware repo's picolib.asm)
     picovideo.asm   PicoVideo register writes, mode select
-    scld.asm        port FFh shadow (screen mode, hi-res colour; bits 6, 7 kept 0)
+    scld.asm        CHNG_VID (open DF2), DECR mode writes keeping bit 7
     kbd.asm         matrix scan, debounce, repeat, key map (section 8)
     sound.asm       bell on the AY (ports F5h/F6h)
   video/
@@ -158,11 +196,31 @@ makes it possible to change column mode in the middle of a session.
 
 | | 32 col | 64 col | 80 col |
 |---|---|---|---|
-| Hardware | SCLD mode 0 | SCLD mode 6 (`OUT FF`, 6 + colour in bits 3-5) | PicoVideo mode 5 |
+| Hardware | SCLD mode 0 | SCLD mode 6 (DECR 6 + ink in bits 3-5) | PicoVideo mode 5 |
 | Glyphs | 8x8 from our font, 8 bytes into DF1 | 8x8, even columns in DF1, odd in DF2 | One byte at 4000h + row x 80 + col |
 | Colour | Per cell (Spectrum attributes) | One colour pair for the whole screen; per cell with PicoVideo mode 7 (**to verify** where its attributes live) | Per cell at 4780h (**to verify** the attribute format; assumed to be the Spectrum one) |
 | Scroll one line | ~5.9 KB of LDI, about 27 ms | ~11.8 KB, about 54 ms | ~3.7 KB, about 17 ms |
 | Cursor | XOR an underline | XOR an underline | Invert the cell's attribute |
+
+**64 columns, in detail** (Technical Manual 5.2.1 and 5.2.3; Zebra OS-64):
+
+- DECR mode field 6. Bits 3-5 pick the ink, and the paper is its complement: 06h is black on
+  white, and 3Eh is white on black. BRIGHT and FLASH are fixed at 0, the border follows the
+  paper, and the attribute areas aren't read.
+- A cell's address: the row's start from a 24-entry table (as in the manual), then
+  `SET 5,H` for an odd column (DF2), and the column shifted right by one as the offset. Then
+  eight bytes go in, `INC H` between them, as in 32 columns.
+- Scrolling and clearing do every move twice, once in each file. OS-64 wraps the ROM's
+  `LDIR` as: `LDIR`, `SET 5,D`, `SET 5,H`, `LDIR`, then reset both.
+- Each dot is half a standard pixel wide, so an 8-dot glyph is as wide as 4 pixels.
+
+**A possible fourth mode: 80 columns without PicoVideo.** The Technical Manual (5.2.3)
+describes an 80-column screen built on the 64-column hardware with a 6x8 font: 512 dots
+make room for 85 characters. A character can span both display files, so drawing it means
+masking and shifting, which is slower than the byte-aligned modes. This would give an
+80-column ANSI screen on any 2068, in one colour, at the cost of very narrow glyphs. It's a
+candidate for after M4. Appendix C of the manual has the original package, but its listing
+isn't in the Markdown copy.
 
 Rows: the terminal is **24 rows** in every mode; ANSI BBSes expect 24. The status bar is an
 overlay, shown while a PicoTerm menu or prompt is open, and briefly on events (CONNECT,

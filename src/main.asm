@@ -9,6 +9,7 @@
         ORG ORG_ADDR
 
 start:
+        call dfile_open             ; moves BASIC and its stack out of DF2
         di
         ld (saved_sp),sp
         exx
@@ -30,20 +31,18 @@ start:
         ld a,(ROM_VERSION)
         call vid32_hex8
 
-        ; BASIC lives inside DF2 on the 2068 (CHANS is about 6840h), so
-        ; 64-column mode has to save DF2..STKEND and put it back on exit.
-        ld hl,msg_df2
+        ld hl,msg_vidmod
         call vid32_puts
-        ld hl,(SV_STKEND)
-        ld de,DF2
-        or a
-        sbc hl,de
-        jr nc,.df2
-        ld hl,0
-.df2:
+        ld a,(SV_VIDMOD)
+        call vid32_hex8
+        ld hl,msg_chans
+        call vid32_puts
+        ld hl,(SV_CHANS)
         call vid32_hex16
-        ld hl,msg_bytes
+        ld hl,msg_mstbot
         call vid32_puts
+        ld hl,(SV_MSTBOT)
+        call vid32_hex16
 
         ld hl,msg_ticks
         call vid32_puts
@@ -92,6 +91,7 @@ wait_no_key:
         ret
 
         INCLUDE "hw/isr.asm"
+        INCLUDE "hw/scld.asm"
         INCLUDE "video/vid32.asm"
 
 TICKS_POS       equ 070Ch           ; row 7, column 12: after "Interrupts: "
@@ -99,13 +99,14 @@ TICKS_POS       equ 070Ch           ; row 7, column 12: after "Interrupts: "
 msg_banner:     db "PicoTerm M0",13
                 db "TS-2068 terminal for TS-Pico",13,13,0
 msg_rom:        db "ROM byte 0065h: ",0
-msg_df2:        db 13,"BASIC in DF2: ",0
-msg_bytes:      db "h bytes",13,13,0
-msg_ticks:      db 13,"Interrupts: ",13,13
+msg_vidmod:     db 13,"VIDMOD ",0
+msg_chans:      db "  CHANS ",0
+msg_mstbot:     db 13,"MSTBOT ",0
+msg_ticks:      db 13,13,"Interrupts: ",13,13
                 db "Press a key to return to BASIC",0
 
 saved_sp:       dw 0
 saved_hl2:      dw 0
 
 end_of_code:
-        ASSERT end_of_code <= STACK_TOP - 256, "Code runs into the stack"
+        ASSERT end_of_code <= CODE_LIMIT, "Code runs into the stack"
