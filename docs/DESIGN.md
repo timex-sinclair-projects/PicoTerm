@@ -54,6 +54,9 @@ Dropped or changed:
 - The TxRDY wait with no timeout. The ESP32 is powered on demand and takes about a second to
   start, during which TxRDY stays 0. Every wait has a timeout.
 - Exact status compares like `IN 119=133`. We mask the bits we mean.
+- A status of FFh means "no 8251". With no card the bus floats high, and the emulators read
+  FFh too. Taken at face value it means "ready, a byte waiting, every error". PicoTerm would
+  read a stream of FFh bytes.
 
 ## 3. Memory map
 
@@ -439,6 +442,24 @@ PicoVideo, and an empty phonebook.
   - Does it send NAWS (window size)?
 
 ## 12. Testing
+
+What exists after M2:
+
+- **Host machine** (`tests/hostmachine.py`): PicoTerm's real binary on the `z80` package
+  (kosarev, MIT).
+  - It models RAM, the system variables PicoTerm reads, the keyboard matrix, the frame
+    interrupt (IM2, bus FFh), DECR, and the 8251 and TS-Pico ports.
+  - A made-up ROM font with a different glyph for every character lets the tests read the
+    screen back from the bitmap.
+- **Fakes** (`tests/fakes.py`):
+  - the card's 8251 in Hayes mode: boot delay, pacing, injected errors, floating bus;
+  - Zimodem: echo, verbose results, `ATDT` to a host table, stream mode, `+++` with its
+    guard times, `ATH`;
+  - a test BBS: greeting, echo, `bye`, `flood`;
+  - the TS-Pico command protocol.
+- **ZEsarUX** for the real keyboard scan and the bitmap, with local echo turned on.
+
+The plan before M2:
 
 - **Host tests (Python):** run assembled routines in a Python Z80 emulator, with a fake 8251
   and a fake TS-Pico (the firmware repo's `test_examples.py` simulates the Pico the same way).

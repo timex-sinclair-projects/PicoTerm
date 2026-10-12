@@ -1,0 +1,2 @@
+# Host tests: a Z80 emulator with port and interrupt callbacks (MIT).
+z80==1.2.0

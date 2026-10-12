@@ -39,6 +39,7 @@ isr:
         inc hl
         ld (ticks),hl
         call kbd_scan
+        call acia_drain
         pop hl
         pop de
         pop bc

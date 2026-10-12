@@ -28,6 +28,18 @@ term_puts:
         inc hl
         jr term_puts
 
+; term_fresh_line: start a new line unless the cursor is at its start.
+term_fresh_line:
+        ld a,(cur_col)
+        ld b,a
+        ld a,(term_wrap)
+        or b
+        ret z
+        ld hl,crlf
+        jr term_puts
+
+crlf:   db 13,10,0
+
 ; term_putc: display byte A. Uses all but IX, IY.
 term_putc:
         push af

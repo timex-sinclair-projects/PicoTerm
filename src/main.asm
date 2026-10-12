@@ -1,8 +1,9 @@
 ; main.asm - PicoTerm entry point
 ;
-; M1: take over the machine (DF2 opened, own stack, IM2), then run a local
-; "typewriter": keys go through the key map and straight into the TTY
-; emulation. BREAK (CAPS SHIFT + SPACE) gives the machine back to BASIC.
+; M2: a plain terminal on the 8251. At start-up PicoTerm puts the card's
+; modem in Hayes mode (if the ROM is the TS-Pico's), resets the 8251 and
+; checks Zimodem answers AT. Then keys go to the modem and received bytes
+; go to the TTY emulation. BREAK hangs up if connected and returns to BASIC.
 
         INCLUDE "mem.inc"
 
@@ -28,40 +29,110 @@ start:
         call term_reset
         ld hl,msg_banner
         call term_puts
+        call modem_start
 
 main_loop:
         call kbd_get
-        jr z,.idle
+        jr z,.rx
         cp K_MENU
-        jr z,exit
-        call local_key
-        ld hl,(ticks)
-        ld (blink_base),hl
-        jr main_loop
-.idle:
+        jp z,exit
+        call send_key
+        call activity
+.rx:
+        call pump_rx
+        jr c,main_loop              ; something arrived: look again at once
         call cursor_blink
         jr main_loop
 
-; local_key: the typewriter: show key A as the far end would echo it.
-local_key:
+; send_key: key A to the modem, and to the screen too with local echo.
+send_key:
+        push af
+        ld a,(set_echo)
+        or a
+        call nz,.echo
+        pop af
         cp K_ENTER
         jr nz,.notenter
         ld a,0Dh
-        call term_putc
-        ld a,0Ah
-        jp term_putc
+        jp acia_send
 .notenter:
         cp K_BACKSPACE
         jr nz,.notbs
+        ld a,(set_backspace)
+        jp acia_send
+.echo:
+        pop hl                      ; the return address
+        pop af
+        push af
+        push hl
+        cp K_ENTER
+        ld hl,crlf
+        jp z,term_puts
+        cp K_BACKSPACE
         ld hl,bs_echo
-        jp term_puts
-.notbs:
+        jp z,term_puts
         cp 80h
-        ret nc                      ; arrows: sent to the modem from M2 on
+        ret nc                      ; arrows: not echoed
         jp term_putc
+.notbs:
+        cp K_UP
+        jr c,.plain
+        cp K_RIGHT+1
+        ret nc                      ; K_MENU is handled above; nothing else
+        sub K_UP
+        ld hl,arrow_codes
+        add a,l
+        ld l,a
+        adc a,h
+        sub l
+        ld h,a
+        ld a,(hl)
+        push af
+        ld a,1Bh
+        call acia_send
+        ld a,'['
+        call acia_send
+        pop af
+.plain:
+        jp acia_send
 
-; cursor_blink: the cursor shows for 32 frames and hides for 32, starting
-; shown whenever something was typed.
+arrow_codes:    db "ABDC"           ; K_UP K_DOWN K_LEFT K_RIGHT
+
+; pump_rx: show up to 32 received bytes. C = at least one arrived.
+pump_rx:
+        ld b,32
+        or a
+        push af
+.next:
+        push bc
+        call rx_get
+        jr nc,.empty
+        call hayes_watch
+        call term_putc
+        pop bc
+        pop af
+        scf
+        push af
+        djnz .next
+        jr .out
+.empty:
+        pop bc
+.out:
+        pop af
+        ret nc
+        jr activity_c
+
+; activity: restart the cursor blink, so it shows while things happen.
+activity:
+        or a
+activity_c:
+        push af
+        ld hl,(ticks)
+        ld (blink_base),hl
+        pop af
+        ret
+
+; cursor_blink: the cursor shows for 32 frames and hides for 32.
 cursor_blink:
         ld hl,(ticks)
         ld de,(blink_base)
@@ -71,13 +142,68 @@ cursor_blink:
         jp z,vid_cursor_on
         jp vid_cursor_off
 
-; exit: restore everything BASIC relies on and return to it, USR = 0.
+; modem_start: Hayes mode on the card, reset the 8251, check for Zimodem.
+modem_start:
+        call pico_present
+        jr z,.reset
+        ld hl,cmd_modem_hayes
+        call pico_cmd
+        push af
+        call term_fresh_line
+        pop af
+        cp PS_OK
+        jr z,.on
+        ld hl,msg_no_tpi_modem
+        call term_puts
+        jr .reset
+.on:
+        ld hl,cmd_modem_on
+        call pico_cmd
+        call term_fresh_line
+.reset:
+        call acia_init
+        ld de,5*50                  ; Zimodem takes about a second to start
+        call acia_wait_ready
+        jr nc,.ready
+        ld hl,msg_no_8251
+        jp term_puts
+.ready:
+        ld hl,cmd_at
+        ld de,3*50
+        call hayes_command
+        cp HR_OK
+        jr z,.init
+        ld hl,msg_no_answer
+        jp term_puts
+.init:
+        ld hl,set_init
+        ld de,3*50
+        call hayes_command
+        ld hl,msg_ready
+        jp term_puts
+
+; pico_print: text from the TS-Pico. Its CRs start new lines.
+pico_print:
+        cp 0Dh
+        jp nz,term_putc
+        jp term_fresh_line
+
+; exit: hang up if connected, then restore everything BASIC relies on and
+; return to it, USR = 0.
 exit:
+        ld a,(hayes_online)
+        or a
+        jr z,.released
+        ld hl,msg_hangup
+        call term_puts
+        call hayes_hangup
+.released:
         xor a                       ; wait for BREAK to be let go, or the
         in a,(PORT_ULA)             ; ROM sees it and stops with report D
         cpl
         and 1Fh
-        jr nz,exit
+        jr nz,.released
+        call acia_off
         call vid_cursor_off
         ld a,(SV_ATTR_P)
         ld (cur_attr),a
@@ -102,14 +228,33 @@ exit:
         INCLUDE "hw/isr.asm"
         INCLUDE "hw/scld.asm"
         INCLUDE "hw/kbd.asm"
+        INCLUDE "hw/acia.asm"
+        INCLUDE "hw/pico.asm"
+        INCLUDE "modem/hayes.asm"
         INCLUDE "video/font.asm"
         INCLUDE "video/vid.asm"
         INCLUDE "video/vid32.asm"
         INCLUDE "term/tty.asm"
 
-msg_banner:     db "PicoTerm M1 - local typewriter",13,10
-                db "BREAK returns to BASIC",13,10,10,0
+; --- settings (the Settings screen and picoterm.cfg come in M5) ----------
+
+set_backspace:  db 08h              ; or 7Fh
+set_echo:       db 0                ; 1 = local echo (half duplex)
+set_init:       db "ATE1V1X1Q0",0
+
+; --- text -----------------------------------------------------------------
+
+msg_banner:     db "PicoTerm M2",13,10
+                db "BREAK: hang up, back to BASIC",13,10,10,0
+msg_ready:      db "Modem ready.",13,10,0
+msg_no_tpi_modem: db "This TS-Pico has no tpi:modem.",13,10,0
+msg_no_8251:    db "No modem: the 8251 isn't ready.",13,10,0
+msg_no_answer:  db "No answer from the modem.",13,10,0
+msg_hangup:     db 13,10,"Hanging up...",13,10,0
 bs_echo:        db 08h," ",08h,0
+cmd_modem_hayes: db "tpi:modem hayes",0
+cmd_modem_on:   db "tpi:modem on",0
+cmd_at:         db "AT",0
 
 saved_sp:       dw 0
 saved_hl2:      dw 0
@@ -120,7 +265,8 @@ end_of_code:
 ; --- uninitialised data, not in the binary --------------------------------
 
 FONT            equ (end_of_code + 255) & 0FF00h    ; 2 KB, page-aligned
-SHADOW_CHR      equ FONT + 2048
+RX_RING         equ FONT + 2048                     ; 2 KB, page-aligned
+SHADOW_CHR      equ RX_RING + RX_SIZE
 SHADOW_ATR      equ SHADOW_CHR + MAX_CELLS
 BSS_END         equ SHADOW_ATR + MAX_CELLS
 

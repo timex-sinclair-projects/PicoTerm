@@ -1,4 +1,4 @@
-"""M1: keyboard map, TTY emulation and the 32-column screen, in ZEsarUX.
+"""The keyboard map, TTY emulation and the 32-column screen, in ZEsarUX.
 
 Keys are pressed on the emulated matrix (send-keys-event), so these tests go
 through PicoTerm's own scanner. The screen is checked two ways: the shadow
@@ -25,7 +25,11 @@ class TypewriterTest(unittest.TestCase):
         cls.emu = Emulator().__enter__()
         cls.emu.wait_for_text("Sinclair")
         cls.emu.load(TAP)
-        cls.emu.wait_for_text("typewriter")
+        # ZEsarUX has no 8251, so PicoTerm reports no modem. With local
+        # echo on, it's a typewriter: keys go through the key map and the
+        # TTY emulation, which is what these tests are about.
+        cls.emu.wait_for_text("No modem", timeout=30)
+        cls.emu.cmd(f"write-memory {cls.sym['set_echo']} 1")
 
     @classmethod
     def tearDownClass(cls):
