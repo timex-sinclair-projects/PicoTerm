@@ -1,0 +1,29 @@
+# PicoTerm build. Needs sjasmplus (1.20 or later) and Python 3.
+
+SJASMPLUS ?= sjasmplus
+PYTHON    ?= python3
+
+ORG   := 0x8000
+BUILD := build
+SRC   := $(shell find src -name '*.asm' -o -name '*.inc')
+
+.PHONY: all clean test
+
+all: $(BUILD)/picoterm.tap
+
+$(BUILD):
+	mkdir -p $@
+
+$(BUILD)/picoterm.bin: $(SRC) | $(BUILD)
+	$(SJASMPLUS) --nologo --msg=war -DORG_ADDR=$(ORG) --inc=src \
+		--raw=$@ --sym=$(BUILD)/picoterm.sym --lst=$(BUILD)/picoterm.lst \
+		src/main.asm
+
+$(BUILD)/picoterm.tap: $(BUILD)/picoterm.bin tools/mktap.py
+	$(PYTHON) tools/mktap.py --org $(ORG) --name PicoTerm $< $@
+
+test: $(BUILD)/picoterm.tap
+	$(PYTHON) -m unittest discover -s tests -v
+
+clean:
+	rm -rf $(BUILD)
