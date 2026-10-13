@@ -136,8 +136,14 @@ class FakeZimodem:
     """Enough of Zimodem: AT commands with echo and verbose results, ATDT to
     a host table, stream mode, the +++ escape with guard times, ATH."""
 
-    def __init__(self, hosts=None):
+    def __init__(self, hosts=None, networks=None):
         self.hosts = hosts if hosts is not None else {"bbs.example:23": EchoBBS}
+        # WiFi networks in range: ssid -> (rssi, password or None if open)
+        self.networks = networks if networks is not None else {
+            "HomeNet": (-48, "secret12"), "Cafe Free": (-71, None),
+            "Neighbour": (-80, "x")}
+        self.joined = None
+        self.saved = False
         self.to_terminal = deque()
         self.mode = "cmd"
         self.echo = True
@@ -203,6 +209,26 @@ class FakeZimodem:
         rest = text[2:]
         while rest:
             c = rest[0].upper()
+            if c == "W" and not rest[1:2].isdigit():
+                m = re.match(r'W"([^,"]*),([^"]*)"', rest, re.I)
+                if m:                               # ATW"ssid,password": join
+                    ssid, pw = m.group(1), m.group(2)
+                    net = self.networks.get(ssid)
+                    if net is None or (net[1] is not None and net[1] != pw):
+                        self.result(b"ERROR")
+                        return
+                    self.joined = ssid
+                    rest = rest[m.end():]
+                    continue
+                for ssid, (rssi, pw) in self.networks.items():   # ATW: scan
+                    self.send(b"%s (%d)%s\r\n" % (ssid.encode(), rssi,
+                                                   b" " if pw is None else b"*"))
+                rest = rest[1:]
+                continue
+            if rest[:2].upper() == "&W":
+                self.saved = True
+                rest = rest[2:]
+                continue
             if c == "D":
                 m = re.match(r'D[TX]?"([^"]+)"', rest, re.I)
                 if not m:
@@ -239,9 +265,11 @@ class FakePico:
 
     IDLE, MID = 0xFF, 0xF7
 
-    def __init__(self, knows_modem=True, verbose=False):
+    def __init__(self, knows_modem=True, verbose=False, files=None):
         self.knows_modem = knows_modem
         self.verbose = verbose
+        self.files = files if files is not None else {}   # name -> bytes
+        self.channels = {}
         self.tx = deque([1])
         self.y = self.IDLE
         self.state = "idle"
@@ -292,10 +320,19 @@ class FakePico:
         else:
             text = bytes(body[3:-1]).decode()
             self.commands.append(text)
-            if text.lower().startswith("tpi:modem") and self.knows_modem:
+            word = text.split(" ")[0].lower()
+            if word == "tpi:modem" and self.knows_modem:
                 status, msg = 1, "Modem: " + text[10:]
+            elif word in ("tpi:chopen", "tpi:chwr", "tpi:chrd", "tpi:chclose"):
+                pre = self.prehead[-1]
+                if self.channel(word, text, pre[3] | pre[4] << 8, pre[5] | pre[6] << 8):
+                    return                      # a data answer is queued
+                status, msg = self.ch_status, None
             else:
                 status, msg = 5, "Unrecognized command: " + text.split(" ")[0][4:]
+        self.answer(status, msg)
+
+    def answer(self, status, msg=None):
         if msg and (self.verbose or status != 1):
             self.tx.extend([0x81, status, 0x0D, *msg.encode(), 0])
         else:
@@ -303,3 +340,54 @@ class FakePico:
         self.y = self.IDLE
         self.tail = True
         self.state = "tail"
+
+    # --- the channel commands (Programmer's Manual chapter 6), text mode:
+    # CR <-> newline. Binary mode and TAB seeks aren't modelled.
+
+    def channel(self, word, text, stream, n):
+        """Run a channel command. True if it queued a data answer itself;
+        otherwise ch_status is the status to send."""
+        self.ch_status = 1
+        if word == "tpi:chopen":
+            _, mode, name = text.split(" ", 2)
+            if mode.startswith("r"):
+                if name not in self.files:
+                    self.ch_status = 3                  # F
+                    return False
+                data = self.files[name].replace(b"\n", b"\r")
+                self.channels[stream] = {"name": name, "data": data, "pos": 0}
+            else:
+                self.files[name] = b""
+                self.channels[stream] = {"name": name, "write": True}
+        elif word == "tpi:chwr":
+            ch = self.channels.get(stream)
+            if not ch or not ch.get("write"):
+                self.ch_status = 10                     # J
+                return False
+            data = bytes.fromhex(text.split(" ", 1)[1])
+            if 0x17 in data:
+                self.ch_status = 4                      # a TAB we don't model
+                return False
+            self.files[ch["name"]] += data.replace(b"\r", b"\n")
+        elif word == "tpi:chrd":
+            ch = self.channels.get(stream)
+            if not ch or "data" not in ch:
+                self.ch_status = 10
+                return False
+            n = n or 255
+            chunk = ch["data"][ch["pos"]:ch["pos"] + n]
+            ch["pos"] += len(chunk)
+            if not chunk:
+                self.ch_status = 7                      # end of file
+                return False
+            x = 0
+            for b in chunk:
+                x ^= b
+            self.tx.extend([1, len(chunk), *chunk, x])
+            self.y = self.IDLE
+            self.tail = True
+            self.state = "tail"
+            return True
+        elif word == "tpi:chclose":
+            self.channels.pop(stream, None)
+        return False

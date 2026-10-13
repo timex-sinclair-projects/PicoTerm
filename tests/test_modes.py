@@ -178,9 +178,7 @@ class ModesTest(unittest.TestCase):
     def test_exit_from_64_and_80_restores_the_standard_screen(self):
         for cols in (VM_64, VM_80):
             m = self.start(picovideo=True, cols=cols)
-            m.press("SPACE", "CAPS")
-            m.run_frames(20)
-            self.assertTrue(m.exited)
+            self.assertTrue(m.quit())
             self.assertEqual(m.decr & 0x07, 0)
 
 

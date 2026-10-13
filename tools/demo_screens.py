@@ -86,7 +86,43 @@ def main():
         run(font, True, 1, "box-64-picovideo.png", box_menu),
         run(font, True, 2, "box-80-picovideo.png", box_menu),
     ]
+    made += menu_screens()
     print("\n".join(made))
+
+
+def menu_screens():
+    """The menu, phonebook, an entry, settings and WiFi, in 32 columns."""
+    files = {"picoterm.cfg": b"phone=Test BBS|bbs.example:23|1|2|0|8|0\n"
+                             b"phone=Level 29|bbs.fozztexx.com:23|1|2|1|8|0\n"
+                             b"phone=Particles|particlesbbs.dyndns.org:6400|1|2|0|8|0\n"}
+    zm = FakeZimodem()
+    m = Machine(acia=Fake8251(zm), pico=FakePico(files=files))
+    m.run_frames(200)
+    m.idle()
+    out = os.path.join(HERE, "..", "build")
+    made = []
+
+    def shot(name):
+        m.settle()
+        save_png(m, os.path.join(out, name), scale=3)
+        made.append("build/" + name)
+
+    m.press("SPACE", "CAPS")
+    shot("menu.png")
+    m.press("d")
+    m.press("6", "CAPS")
+    shot("phonebook.png")
+    m.press("e")
+    shot("entry.png")
+    m.press("SPACE", "CAPS")
+    m.press("SPACE", "CAPS")
+    m.press("s")
+    shot("settings.png")
+    m.press("SPACE", "CAPS")
+    m.press("w")
+    m.run_frames(20)
+    shot("wifi.png")
+    return made
 
 
 if __name__ == "__main__":

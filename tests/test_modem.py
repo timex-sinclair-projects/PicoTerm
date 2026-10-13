@@ -40,7 +40,8 @@ class ModemTest(unittest.TestCase):
 
     def test_startup_on_the_tspico(self):
         m = self.start()
-        self.assertEqual(self.pico.commands, ["tpi:modem hayes", "tpi:modem on"])
+        self.assertEqual(self.pico.commands,
+                         ["tpi:chopen r picoterm.cfg", "tpi:modem hayes", "tpi:modem on"])
         self.assertEqual(self.acia.ctrl_log[:6], RESET)
         self.assertEqual(self.zm.commands, ["AT", "ATE1V1X1Q0", 'AT&S"41=ANSI"'])
         self.assertIn("Modem ready.", text(m))
@@ -66,7 +67,7 @@ class ModemTest(unittest.TestCase):
         self.pico = FakePico(knows_modem=False)
         m = self.m = Machine(acia=self.acia, pico=self.pico)
         m.run_frames(200)
-        self.assertEqual(self.pico.commands, ["tpi:modem hayes"])
+        self.assertEqual(self.pico.commands, ["tpi:chopen r picoterm.cfg", "tpi:modem hayes"])
         self.assertIn("Unrecognized command", text(m))
         self.assertIn("This TS-Pico has no tpi:modem.", text(m))
         self.assertIn("Modem ready.", text(m))
@@ -83,9 +84,7 @@ class ModemTest(unittest.TestCase):
         m.type("x")
         m.type("y")
         self.assertLess(m.frame - before, 100)
-        m.press("SPACE", "CAPS")
-        m.run_frames(50)
-        self.assertTrue(m.exited)
+        self.assertTrue(m.quit())
 
     def test_no_card_floating_bus(self):
         m = self.start(floating=True, frames=400)
@@ -158,24 +157,20 @@ class ModemTest(unittest.TestCase):
         self.assertIn("NO ANSWER", text(m))
         self.assertEqual(m.var("hayes_online"), 0)
 
-    def test_break_while_online_hangs_up_then_exits(self):
+    def test_quit_while_online_hangs_up_then_exits(self):
         m = self.start()
         m.type('atdt"bbs.example:23"\n')
         m.run_frames(20)
         self.assertEqual(m.var("hayes_online"), 1)
-        m.press("SPACE", "CAPS")
-        m.run_until(lambda: m.exited, limit=600)
-        self.assertTrue(m.exited)
+        self.assertTrue(m.quit())
         self.assertEqual(self.zm.escapes, 1)         # the guard times held
         self.assertEqual(self.zm.commands[-1], "ATH")
         self.assertIsNone(self.zm.remote)
         self.assertEqual(self.acia.ctrl_log[-1], 0x15)   # left idle, DTR off
 
-    def test_break_offline_exits_at_once(self):
+    def test_quit_offline_exits_at_once(self):
         m = self.start()
-        m.press("SPACE", "CAPS")
-        m.run_frames(10)
-        self.assertTrue(m.exited)
+        self.assertTrue(m.quit(limit=20))
         self.assertEqual(self.zm.escapes, 0)
 
     # --- receiving -----------------------------------------------------------

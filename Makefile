@@ -10,6 +10,9 @@ SRC   := $(shell find src -name '*.asm' -o -name '*.inc')
 
 .PHONY: all clean test venv
 
+# sjasmplus writes its output even when assembly fails: don't keep it.
+.DELETE_ON_ERROR:
+
 all: $(BUILD)/picoterm.tap
 
 $(BUILD):

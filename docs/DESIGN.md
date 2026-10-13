@@ -399,6 +399,7 @@ itself and maps keys. This first assignment follows the 2068's own key legends w
 | CAPS + SYMBOL SHIFT, then a key | **Ctrl** + that key (one-shot; "CTRL" on the status bar) |
 | SYMBOL SHIFT + key | the key's ASCII symbol, with the BASIC keywords replaced: SS+A `~`, SS+S `\|`, SS+D `\`, SS+F `{`, SS+G `}`, SS+Y `[`, SS+U `]`, SS+H `^`, SS+X `` ` `` (instead of `£`), SS+Q/W/E unused |
 | CAPS + SPACE (BREAK) | **PicoTerm menu** |
+| CAPS + 9 (GRAPHICS) | next column mode (32, 64, 80 with PicoVideo) |
 
 How the scan behaves (M1):
 - One key is read per frame, and the shifts count only as modifiers.
@@ -418,6 +419,78 @@ The menu holds:
 - Clear screen;
 - Send break;
 - Exit to BASIC.
+
+### The menu, as built in M5
+
+BREAK opens the menu:
+- D: the phonebook;
+- H: hang up;
+- W: WiFi;
+- S: settings;
+- C: clear the screen;
+- Q: quit to BASIC, hanging up first if connected.
+
+BREAK or EDIT (Esc) goes back a level from every screen.
+
+**Windows:**
+- **Drawing:** windows are 32 cells wide and centred in wider modes. They're drawn
+  straight through the driver, so the shadow keeps the terminal. Closing a window
+  redraws from the shadow, and so does coming back to the menu from a screen under it.
+- **Received bytes:** while a window is open they wait in the ring (`RX_HOLD`). When a
+  screen asks Zimodem something (WiFi, the terminal type), they go to a 1 KB capture
+  buffer instead (`RX_CAPTURE`). `hayes_watch` sees them in both cases, so result codes
+  still arrive.
+- **Selection:** in the SCLD's mono 64-column mode a highlight can't show, so the selected
+  line also has a `>`. Moving the selection redraws only the two rows involved.
+
+**Phonebook:**
+- **Entries:** 20, each with a name (16 characters), `host:port` (40), and its own
+  settings: telnet (ATDT or ATD), emulation, columns, backspace and local echo.
+- **Dialling** applies the entry's settings, switches column mode if needed (64 without
+  PicoVideo instead of 80), returns to the terminal, sends the terminal type, then
+  `ATDT"host:port"`. CONNECT or NO ANSWER then shows in the terminal.
+- **While connected**, dialling is refused with "Hang up first."
+
+**WiFi:**
+- **Scanning:** `ATW` lists networks as `SSID (RSSI)*` (Zimodem's `doWiFiCommand`), and
+  the SSID is the text before the last ` (`. M lets you type an SSID that wasn't found.
+- **Joining:** the password is masked, then `ATW"ssid,password"` is sent. On OK,
+  PicoTerm offers to save the network as Zimodem's default with `AT&W`.
+- **Limit:** Zimodem can't quote a comma or `"` in either field.
+
+**Settings:**
+- emulation, columns, PicoVideo, the 64-column ink, backspace, local echo, ENTER (CR or
+  CR LF), blink as FLASH, the bell, and the modem init string;
+- S saves everything to `picoterm.cfg`;
+- on leaving Settings, the column mode is set again, and a changed emulation is sent to
+  Zimodem as the terminal type.
+
+**`picoterm.cfg`** is a text file in the SD card's current folder:
+
+```
+emul=2
+cols=1
+picovideo=1
+ink64=7
+bs=8
+echo=0
+enter=0
+blink=1
+bell=1
+init=ATE1V1X1Q0
+phone=Test BBS|bbs.example:23|1|2|0|8|0
+```
+
+- **Phone fields:** name, host, telnet, emulation, columns, backspace, echo.
+- **Writing:** text-mode channel commands on stream 200, with `tpi:chwr` in hex chunks of
+  at most 100 bytes.
+- **Reading:** at start-up with `tpi:chrd`, before anything is drawn, with the TS-Pico's
+  messages silenced.
+- **Bad lines:** unknown keys, out-of-range numbers and malformed phone lines are skipped.
+
+**Memory after M5:** code and data are 12.8 KB (8800h-B9FFh). Uninitialised data runs to
+DF69h: the ring, the shadow, the phonebook, the capture buffer, and the command and WiFi
+buffers. That leaves about 5 KB below the stack for M6.
 
 ## 9. XMODEM download
 

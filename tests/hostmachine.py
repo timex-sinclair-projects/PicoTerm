@@ -156,6 +156,18 @@ class Machine:
         blinks the cursor when its ring is empty and the screen is done."""
         return self.run_to(self.sym["cursor_blink"])
 
+    def settle(self, limit=50):
+        """Run until PicoTerm asks for a key with none waiting: whatever the
+        last key started (a window, a redraw) has finished."""
+        for _ in range(limit):
+            if not self.run_to(self.sym["kbd_get"]):
+                return False
+            if self.var("kbq_head") == self.var("kbq_tail"):
+                return True
+            self.m.ticks_to_stop = 10
+            self.m.step_over_breakpoint()
+        return False
+
     def stop_at(self, addr):
         """Run (without frame interrupts) until the CPU reaches addr."""
         self.m.set_breakpoint(addr)
@@ -221,6 +233,13 @@ class Machine:
         self.run_frames(frames)
         self.keys.clear()
         self.run_frames(frames)
+
+    def quit(self, limit=600):
+        """BREAK for the menu, then Q: back to BASIC."""
+        self.press("SPACE", "CAPS")
+        self.press("q")
+        self.run_until(lambda: self.exited, limit=limit)
+        return self.exited
 
     def type(self, text):
         for ch in text:

@@ -37,6 +37,11 @@ pico_present:
 ; Text the Pico sends back goes to pico_print. A = the status (PS_OK = 1).
 ; Uses all but IX, IY.
 pico_cmd:
+        ld bc,0
+        ld (pico_pmr1),bc
+        ld (pico_pmr2),bc
+; pico_cmd_n: the same with the CODE numbers already in pico_pmr1/2.
+pico_cmd_n:
         push hl
         ld bc,0
 .len:
@@ -140,10 +145,13 @@ pico_send:
         call pico_tx                ; 1: SAVE "tpi:..."
         ld a,PICO_ROM_MIN
         call pico_tx                ; 2: the ROM version
-        xor a
-        call pico_tx                ; 3-6: CODE numbers, both 0
+        ld a,(pico_pmr1)
+        call pico_tx                ; 3-6: the two CODE numbers
+        ld a,(pico_pmr1+1)
         call pico_tx
+        ld a,(pico_pmr2)
         call pico_tx
+        ld a,(pico_pmr2+1)
         call pico_tx
         ld a,c
         call pico_tx                ; 7-8: text length
@@ -218,3 +226,61 @@ pico_reply:
 .end:
         pop af
         ret
+
+; pico_data: send the command at HL (CODE numbers in pico_pmr1/2) and read
+; a data answer (tpi:chrd) to DE: status 1, a count n, n bytes, their XOR.
+; A = the status: PS_DATA with B = n, PS_EOF, or an error (a bad XOR reads
+; as 2, R). Uses all but IX, IY.
+PS_DATA         equ 1
+PS_EOF          equ 7
+
+pico_data:
+        push de
+        push hl
+        ld bc,0
+.len:
+        ld a,(hl)
+        or a
+        jr z,.counted
+        inc hl
+        inc bc
+        jr .len
+.counted:
+        pop hl
+        call pico_send
+        pop hl
+        jr c,.none
+        call pico_wait_ready
+        jr c,.none
+        in a,(PICO_DATA)
+        cp PS_DATA
+        ret nz                      ; end of file, or an error status
+        call pico_rx
+        ld b,a
+        ld c,0                      ; the XOR
+        or a
+        jr z,.check
+        push bc
+.byte:
+        call pico_rx
+        ld (hl),a
+        inc hl
+        xor c
+        ld c,a
+        djnz .byte
+        ld a,c
+        pop bc
+        ld c,a
+.check:
+        call pico_rx
+        cp c
+        ld a,PS_DATA
+        ret z
+        ld a,2                      ; R: a byte went missing
+        ret
+.none:
+        xor a
+        ret
+
+pico_pmr1:      dw 0                ; the CODE numbers for the next command
+pico_pmr2:      dw 0

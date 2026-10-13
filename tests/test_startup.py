@@ -18,7 +18,7 @@ class StartupTest(unittest.TestCase):
         with Emulator() as emu:
             emu.wait_for_text("Sinclair")           # the 2068 has started
             emu.load(TAP)
-            emu.wait_for_shadow(sym, "PicoTerm M4")
+            emu.wait_for_shadow(sym, "PicoTerm M5")
 
             # CHNG_VID moved BASIC and the ROM's stack out of DF2.
             self.assertEqual(emu.peek(0x5CC2)[0], 0x80)     # VIDMOD
@@ -31,8 +31,10 @@ class StartupTest(unittest.TestCase):
             b = emu.peek16(sym["ticks"])
             self.assertGreater((b - a) & 0xFFFF, 30)
 
-            # BREAK returns to BASIC cleanly.
-            emu.press(emu.KEY_SPACE, emu.KEY_CAPS)
+            # BREAK, Q returns to BASIC cleanly.
+            emu.press(emu.KEY_SPACE, emu.KEY_CAPS)        # the menu
+            time.sleep(1)
+            emu.press("q")                                  # quit
             screen = emu.wait_for_text("0 OK")
             regs = emu.cmd("get-registers")
             self.assertIn("IM1", regs)

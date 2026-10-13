@@ -5,16 +5,21 @@ Zimodem. It talks to the card's 8251 at ports $73/$77 as a Hayes modem over WiFi
 and 64-column displays, PicoVideo's 80 columns, ANSI-BBS/VT52/TTY emulation and XMODEM
 downloads to the TS-Pico's SD card.
 
-The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M4**, a terminal on the card's 8251:
+The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M5**, a terminal on the card's 8251:
 - ANSI-BBS emulation (the default), with colour, VT52 or TTY;
 - the CP437 character set;
-- 32 or 64 columns, or 80 with PicoVideo; CAPS + 9 cycles through them for now;
+- 32 or 64 columns, or 80 with PicoVideo;
 - the bell on the AY;
+- **BREAK opens the menu:**
+  - a phonebook of 20 hosts, each with its own settings;
+  - WiFi: scan, join, and save as the modem's default;
+  - settings;
+  - hang up, clear the screen, quit to BASIC;
+- settings and the phonebook are saved in `picoterm.cfg` on the TS-Pico's SD card;
 - at start-up it puts the card's modem in Hayes mode, checks that Zimodem answers, and
-  sets the telnet terminal type;
-- BREAK hangs up if connected, then returns to BASIC.
+  sets the telnet terminal type.
 
-Still to come: menus and the phonebook, XMODEM.
+Still to come: XMODEM.
 
 ## Building
 
@@ -66,8 +71,13 @@ All of it runs in about a second.
 `tests/test_modes.py` covers the three column modes, switching between them, and the
 font.
 
+`tests/test_menus.py` covers the menu, settings, `picoterm.cfg`, the phonebook and
+WiFi. In these tests the fake TS-Pico keeps files, and the fake Zimodem scans and joins
+networks.
+
 To see what PicoTerm draws, render sample screens. The PNGs go to `build/`: the start-up
-screen, an ANSI menu, and a box-drawn menu in 32 columns, 64 (SCLD and PicoVideo) and 80.
+screen, an ANSI menu, a box-drawn menu in 32 columns, 64 (SCLD and PicoVideo) and 80, and
+PicoTerm's own menu, phonebook, entry, settings and WiFi screens.
 
 ```bash
 .venv/bin/python tools/demo_screens.py

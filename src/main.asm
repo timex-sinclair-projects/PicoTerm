@@ -1,7 +1,8 @@
 ; main.asm - PicoTerm entry point
 ;
-; M4: a terminal on the 8251, with ANSI-BBS (default), VT52 or TTY
-; emulation, in 32 or 64 columns, or 80 with PicoVideo (CAPS + 9 cycles). At start-up PicoTerm puts the card's
+; M5: a terminal on the 8251, with ANSI-BBS (default), VT52 or TTY
+; emulation, in 32 or 64 columns, or 80 with PicoVideo (CAPS + 9 cycles).
+; BREAK opens the menu: phonebook, WiFi, settings (saved to picoterm.cfg). At start-up PicoTerm puts the card's
 ; modem in Hayes mode (if the ROM is the TS-Pico's), resets the 8251 and
 ; checks Zimodem answers AT. Then keys go to the modem and received bytes
 ; go to the TTY emulation. BREAK hangs up if connected and returns to BASIC.
@@ -20,6 +21,17 @@ start:
         ld sp,STACK_TOP
         call isr_install
         ei
+        call pb_clear
+        call config_load            ; quiet: nothing drawn yet
+        ld a,(set_picovideo)        ; no 80 columns without PicoVideo
+        or a
+        jr nz,.cols
+        ld a,(set_cols)
+        cp VM_80
+        jr nz,.cols
+        ld a,VM_64
+        ld (set_cols),a
+.cols:
 
         xor a
         out (PORT_ULA),a            ; black border
@@ -36,7 +48,11 @@ main_loop:
         call kbd_get
         jr z,.rx
         cp K_MENU
-        jp z,exit
+        jr nz,.notmenu
+        call menu_run
+        jp c,exit
+        jr main_loop
+.notmenu:
         cp K_COLS
         jr nz,.key
         call next_cols
@@ -77,6 +93,11 @@ send_key:
         cp K_ENTER
         jr nz,.notenter
         ld a,0Dh
+        call acia_send
+        ld a,(set_enter)
+        or a
+        ret z
+        ld a,0Ah                    ; CR LF
         jp acia_send
 .notenter:
         cp K_BACKSPACE
@@ -121,8 +142,16 @@ send_key:
 
 arrow_codes:    db "ABDC"           ; K_UP K_DOWN K_LEFT K_RIGHT
 
-; pump_rx: show up to 32 received bytes. C = at least one arrived.
+; pump_rx: show up to 32 received bytes. C = at least one arrived. With a
+; window open the bytes wait (RX_HOLD), or go to the capture buffer
+; (RX_CAPTURE); hayes_watch sees them either way.
 pump_rx:
+        ld a,(rx_mode)
+        cp RX_HOLD
+        jr nz,.go
+        or a
+        ret
+.go:
         ld b,32
         or a
         push af
@@ -131,7 +160,17 @@ pump_rx:
         call rx_get
         jr nc,.empty
         call hayes_watch
+        push af
+        ld a,(rx_mode)
+        cp RX_CAPTURE
+        jr z,.capture
+        pop af
         call term_putc
+        jr .shown
+.capture:
+        pop af
+        call capture_byte
+.shown:
         pop bc
         pop af
         scf
@@ -206,7 +245,13 @@ modem_start:
         ld hl,set_init
         ld de,3*50
         call hayes_command
-        ld a,(set_emul)             ; the terminal type for telnet
+        call send_termtype
+        ld hl,msg_ready
+        jp term_puts
+
+; send_termtype: tell Zimodem the terminal type to give telnet hosts.
+send_termtype:
+        ld a,(set_emul)
         add a,a
         ld hl,termtype_cmds
         call vid_add_a
@@ -215,12 +260,18 @@ modem_start:
         ld h,(hl)
         ld l,a
         ld de,3*50
-        call hayes_command
-        ld hl,msg_ready
-        jp term_puts
+        jp hayes_command
 
 ; pico_print: text from the TS-Pico. Its CRs start new lines.
 pico_print:
+        push af
+        ld a,(pico_quiet)
+        or a
+        jr z,.show
+        pop af
+        ret
+.show:
+        pop af
         cp 0Dh
         jp nz,term_putc
         jp term_fresh_line
@@ -279,6 +330,13 @@ exit:
         INCLUDE "term/term.asm"
         INCLUDE "term/ansi.asm"
         INCLUDE "term/vt52.asm"
+        INCLUDE "ui/ui.asm"
+        INCLUDE "ui/input.asm"
+        INCLUDE "ui/menu.asm"
+        INCLUDE "ui/phonebook.asm"
+        INCLUDE "ui/settings.asm"
+        INCLUDE "ui/wifi.asm"
+        INCLUDE "files/config.asm"
 
 ; --- settings (the Settings screen and picoterm.cfg come in M5) ----------
 
@@ -292,7 +350,11 @@ set_picovideo:  db 0                ; 1 = PicoVideo is fitted: 80 columns, and
                                     ; colour in 64
 set_ink64:      db 7                ; SCLD 64-column ink 0-7 (paper is its
                                     ; complement): 7 = white on black
-set_init:       db "ATE1V1X1Q0",0
+set_enter:      db 0                ; 1 = ENTER sends CR LF
+set_init:       db "ATE1V1X1Q0",0   ; Zimodem set-up, sent at start-up
+                ds INIT_MAX-10      ; room to edit it
+INIT_MAX        equ 40
+pico_quiet:     db 0                ; 1 = the TS-Pico's messages aren't shown
 
 termtype_cmds:  dw tt_tty, tt_vt52, tt_ansi
 tt_tty:         db 'AT&S"41=DUMB"',0
@@ -301,8 +363,8 @@ tt_ansi:        db 'AT&S"41=ANSI"',0
 
 ; --- text -----------------------------------------------------------------
 
-msg_banner:     db "PicoTerm M4",13,10
-                db "BREAK: hang up, back to BASIC",13,10,10,0
+msg_banner:     db "PicoTerm M5",13,10
+                db "BREAK: the menu",13,10,10,0
 msg_ready:      db "Modem ready.",13,10,0
 msg_no_tpi_modem: db "This TS-Pico has no tpi:modem.",13,10,0
 msg_no_8251:    db "No modem: the 8251 isn't ready.",13,10,0
@@ -328,6 +390,16 @@ end_of_code:
 RX_RING         equ (end_of_code + 255) & 0FF00h    ; 2 KB, page-aligned
 SHADOW_CHR      equ RX_RING + RX_SIZE
 SHADOW_ATR      equ SHADOW_CHR + MAX_CELLS
-BSS_END         equ SHADOW_ATR + MAX_CELLS
+PHONEBOOK       equ SHADOW_ATR + MAX_CELLS          ; PB_COUNT x PB_SIZE
+CAPTURE         equ PHONEBOOK + PB_COUNT*PB_SIZE    ; replies to the menus
+CMD_BUF         equ CAPTURE + CAPTURE_SIZE          ; a TS-Pico command
+CFG_READ        equ CMD_BUF + 9 + 2*CFG_CHUNK + 1   ; a tpi:chrd answer
+cfg_line        equ CFG_READ + 256                  ; one line of picoterm.cfg
+wifi_list       equ cfg_line + CFG_LINE_MAX + 1
+wifi_ssid       equ wifi_list + WIFI_MAX*WIFI_ENTRY
+wifi_pass       equ wifi_ssid + WIFI_ENTRY
+wifi_cmd        equ wifi_pass + WIFI_PASS_MAX + 1
+wifi_line       equ wifi_cmd + 4 + WIFI_SSID_MAX + 1 + WIFI_PASS_MAX + 2
+BSS_END         equ wifi_line + 64
 
         ASSERT BSS_END <= CODE_LIMIT, "Data runs into the stack"
