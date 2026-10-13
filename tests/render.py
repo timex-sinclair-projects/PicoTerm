@@ -1,5 +1,5 @@
-"""Render the host machine's 32-column screen (bitmap + attributes) to a
-PNG, the way a TS-2068 would show it. Standard library only.
+"""Render the host machine's screen to a PNG, the way the display would
+show it, in any of PicoTerm's column modes. Standard library only.
 
     from render import save_png
     save_png(machine, "screen.png", scale=3)
@@ -17,37 +17,70 @@ PALETTE = [
 ]
 
 
-def pixels(mem):
-    """192 rows of 256 RGB tuples from DF1 and the attribute file."""
+def _colour(a, ink):
+    bright = (a >> 6) & 1
+    return PALETTE[bright][a & 7] if ink else PALETTE[bright][(a >> 3) & 7]
+
+
+def pixels(machine):
+    """192 rows of RGB tuples as the display would show them: 256 wide in
+    32 columns, 512 in 64, 640 in 80 (PicoVideo's text mode, drawn with
+    PicoTerm's font, which is the same CP437 font PicoVideo uses)."""
+    mem = machine.mem
+    mode = machine.mode()
+    decr = machine.decr
     rows = []
+    font = machine.sym["FONT"]
     for y in range(192):
         line = []
-        base = 0x4000 | (y & 0xC0) << 5 | (y & 0x07) << 8 | (y & 0x38) << 2
-        for col in range(32):
-            byte = mem[base + col]
-            a = mem[0x5800 + (y >> 3) * 32 + col]
-            bright = (a >> 6) & 1
-            ink, paper = PALETTE[bright][a & 7], PALETTE[bright][(a >> 3) & 7]
-            for bit in range(7, -1, -1):
-                line.append(ink if byte >> bit & 1 else paper)
+        if mode == 2:
+            r = y >> 3
+            for col in range(80):
+                code = mem[0x4000 + r * 80 + col]
+                a = mem[0x4780 + r * 80 + col]
+                bits = mem[font + code * 8 + (y & 7)]
+                for bit in range(7, -1, -1):
+                    line.append(_colour(a, bits >> bit & 1))
+        else:
+            base = 0x4000 | (y & 0xC0) << 5 | (y & 0x07) << 8 | (y & 0x38) << 2
+            cells = []
+            for col in range(32):
+                a1 = mem[0x5800 + (y >> 3) * 32 + col]
+                cells.append((mem[base + col], a1))
+                if mode == 1:
+                    a2 = mem[0x7800 + (y >> 3) * 32 + col]
+                    cells.append((mem[base + 0x2000 + col], a2))
+            for byte, a in cells:
+                if mode == 1 and decr & 7 == 6:           # SCLD: one colour pair
+                    ink = (decr >> 3) & 7
+                    a = ink | (7 - ink) << 3
+                for bit in range(7, -1, -1):
+                    line.append(_colour(a, byte >> bit & 1))
         rows.append(line)
     return rows
 
 
 def save_png(machine, path, scale=2, border=16):
-    rows = pixels(machine.mem)
+    """Scaled to keep the TV's shape: 32 columns scale x scale; 64 and 80
+    columns, whose dots are narrower, half as much across."""
+    rows = pixels(machine)
+    width = len(rows[0])
+    sx = scale if width == 256 else max(1, scale // 2)
+    sy = scale
+    bx = border * scale // sx
     bc = PALETTE[0][machine.border]
-    w = (256 + 2 * border) * scale
+    full = [bc] * (width + 2 * bx)
+    out_rows = ([full] * border + [[bc] * bx + r + [bc] * bx for r in rows]
+                + [full] * border)
     raw = bytearray()
-    full = [bc] * (256 + 2 * border)
-    out_rows = [full] * border + [[bc] * border + r + [bc] * border for r in rows] + [full] * border
     for r in out_rows:
         line = bytearray()
         for px in r:
-            line += bytes(px) * scale
-        for _ in range(scale):
+            line += bytes(px) * sx
+        for _ in range(sy):
             raw += b"\x00" + line
-    h = len(out_rows) * scale
+    w = len(full) * sx
+    h = len(out_rows) * sy
 
     def chunk(kind, data):
         return (struct.pack(">I", len(data)) + kind + data

@@ -115,7 +115,52 @@ class Emulator:
         raise TimeoutError(f"{text!r} not on screen:\n{self.screen()}")
 
     def peek(self, addr, n=1):
-        return bytes.fromhex(self.cmd(f"read-memory {addr} {n}").strip())
+        out = b""
+        while n > 0:                    # in pieces: ZRCP lines get long
+            k = min(n, 1024)
+            out += bytes.fromhex(self.cmd(f"read-memory {addr} {k}").strip())
+            addr += k
+            n -= k
+        return out
+
+    # --- PicoTerm's screen, read from memory -------------------------------
+    # ZEsarUX's OCR only knows the ROM font; PicoTerm draws in CP437.
+
+    def shadow_rows(self, sym, cols=32):
+        data = self.peek(sym["SHADOW_CHR"], cols * 24)
+        return [data[r * cols:(r + 1) * cols].decode("latin-1") for r in range(24)]
+
+    def wait_for_shadow(self, sym, text, timeout=30):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            rows = self.shadow_rows(sym)
+            if any(text in r for r in rows):
+                return rows
+            time.sleep(0.25)
+        raise TimeoutError(f"{text!r} not in PicoTerm's screen")
+
+    def bitmap_rows(self, sym):
+        """The 32-column bitmap, decoded through PicoTerm's font. The cell
+        under a shown cursor is decoded with its underline undone."""
+        font = self.peek(sym["FONT"], 2048)
+        glyphs = {}
+        for c in range(256):
+            glyphs.setdefault(font[c * 8:c * 8 + 8], chr(c) if 32 <= c < 127 else "?")
+        glyphs[bytes(8)] = " "
+        df = self.peek(0x4000, 6144)
+        col, row = self.peek(sym["cur_col"], 2)
+        shown = self.peek(sym["vid_cursor_shown"])[0]
+        rows = []
+        for r in range(24):
+            line = ""
+            for c in range(32):
+                off = (r & 0x18) << 8 | (r & 7) << 5 | c
+                cell = bytes(df[off + 256 * i] for i in range(8))
+                if shown and (r, c) == (row, col):
+                    cell = cell[:7] + bytes([cell[7] ^ 0xFF])
+                line += glyphs.get(cell, "#")
+            rows.append(line)
+        return rows
 
     def peek16(self, addr):
         lo, hi = self.peek(addr, 2)

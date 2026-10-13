@@ -237,36 +237,85 @@ class Machine:
 
     # --- screen ------------------------------------------------------------
 
-    def shadow_text(self, cols=32, rows=24):
+    def mode(self):
+        return self.var("vid_mode")
+
+    def cols(self):
+        return self.var("vid_cols")
+
+    def shadow_text(self, cols=None, rows=24):
+        cols = cols or self.cols()
         base = self.sym["SHADOW_CHR"]
-        return [self.peek(base + r * cols, cols).decode("latin-1")
+        stride = self.cols()
+        return [self.peek(base + r * stride, cols).decode("latin-1")
                 for r in range(rows)]
 
-    def shadow_attrs(self, cols=32, rows=24):
+    def shadow_attrs(self, cols=None, rows=24):
+        cols = cols or self.cols()
         base = self.sym["SHADOW_ATR"]
-        return [list(self.peek(base + r * cols, cols)) for r in range(rows)]
+        stride = self.cols()
+        return [list(self.peek(base + r * stride, cols)) for r in range(rows)]
 
-    def screen_attrs(self):
-        """The 32-column attribute file, as the SCLD shows it."""
-        return [list(self.peek(0x5800 + r * 32, 32)) for r in range(24)]
-
-    def screen_text(self):
-        """Read the 32-column bitmap back through PicoTerm's own font."""
+    def glyph_table(self):
+        """PicoTerm's font, glyph -> character ('?' outside ASCII)."""
         font = self.sym["FONT"]
         glyphs = {}
         for c in range(256):
-            g = self.peek(font + c * 8, 8)
-            glyphs.setdefault(g, chr(c) if 32 <= c < 127 else "?")
+            glyphs.setdefault(self.peek(font + c * 8, 8),
+                              chr(c) if 32 <= c < 127 else "?")
         glyphs[bytes(8)] = " "
+        return glyphs
+
+    @staticmethod
+    def swap_ink_paper(a):
+        return (a & 0xC0) | (a & 7) << 3 | (a >> 3) & 7
+
+    @staticmethod
+    def cell_addr(row, col):
+        """Display-file address of a 32-column cell's top line."""
+        return 0x4000 | (row & 0x18) << 8 | (row & 7) << 5 | col
+
+    def screen_text(self):
+        """Read the screen back as the hardware would show it: the bitmap
+        through PicoTerm's font in 32 and 64 columns, PicoVideo's text
+        memory in 80. The cursor's flipped cell reads as itself."""
+        mode = self.mode()
+        if mode == 2:
+            return [self.peek(0x4000 + r * 80, 80).decode("latin-1")
+                    for r in range(24)]
+        glyphs = self.glyph_table()
+        crow, ccol = self.cursor()
+        cursor_on = self.var("vid_cursor_shown")
         lines = []
         for r in range(24):
             line = ""
-            for col in range(32):
-                addr = 0x4000 | (r & 0x18) << 8 | (r & 7) << 5 | col
+            for col in range(64 if mode == 1 else 32):
+                if mode == 1:
+                    addr = self.cell_addr(r, col >> 1) | (0x2000 if col & 1 else 0)
+                else:
+                    addr = self.cell_addr(r, col)
                 cell = bytes(self.mem[addr + 256 * i] for i in range(8))
-                line += glyphs.get(cell, glyphs.get(cell[:7] + bytes([cell[7] ^ 0xFF]), "#"))
+                if cursor_on and (r, col) == (crow, ccol):
+                    cell = cell[:7] + bytes([cell[7] ^ 0xFF])   # undo the cursor
+                line += glyphs.get(cell, "#")
             lines.append(line)
         return lines
+
+    def screen_attrs(self):
+        """The attributes the display shows: the attribute file in 32
+        columns, both files in PicoVideo's 64 (mode 7), the text
+        attributes in 80."""
+        mode = self.mode()
+        if mode == 2:
+            rows = [list(self.peek(0x4780 + r * 80, 80)) for r in range(24)]
+            if self.var("vid_cursor_shown"):           # undo the cursor
+                r, c = self.cursor()
+                rows[r][c] = self.swap_ink_paper(rows[r][c])
+            return rows
+        if mode == 1:
+            return [[self.mem[(0x7800 if c & 1 else 0x5800) + r * 32 + (c >> 1)]
+                     for c in range(64)] for r in range(24)]
+        return [list(self.peek(0x5800 + r * 32, 32)) for r in range(24)]
 
     def cursor(self):
         col, row = self.peek(self.sym["cur_col"], 2)

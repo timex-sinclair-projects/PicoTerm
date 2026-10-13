@@ -25,6 +25,7 @@ K_LEFT          equ 84h
 K_RIGHT         equ 85h
 K_MENU          equ 86h             ; BREAK (CAPS + SPACE)
 K_CAPSLOCK      equ 87h             ; handled inside kbd_get
+K_COLS          equ 88h             ; GRAPHICS (CAPS + 9): next column mode
 
 ; frames; the tick is 50 or 60 Hz, close enough for typing
 REPEAT_DELAY    equ 30
@@ -242,7 +243,7 @@ keymap_caps:
         db 'A', 'S', 'D', 'F', 'G'
         db 'Q', 'W', 'E', 'R', 'T'
         db 1Bh, K_CAPSLOCK, 09h, 0, K_LEFT      ; EDIT, CAPS LOCK, TRUE VID, INV VID, left
-        db K_BACKSPACE, 0, K_RIGHT, K_UP, K_DOWN ; DELETE, GRAPHICS, right, up, down
+        db K_BACKSPACE, K_COLS, K_RIGHT, K_UP, K_DOWN ; DELETE, GRAPHICS, right, up, down
         db 'P', 'O', 'I', 'U', 'Y'
         db K_ENTER, 'L', 'K', 'J', 'H'
         db K_MENU, 0, 'M', 'N', 'B'

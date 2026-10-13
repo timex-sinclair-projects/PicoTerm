@@ -5,14 +5,16 @@ Zimodem. It talks to the card's 8251 at ports $73/$77 as a Hayes modem over WiFi
 and 64-column displays, PicoVideo's 80 columns, ANSI-BBS/VT52/TTY emulation and XMODEM
 downloads to the TS-Pico's SD card.
 
-The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M3**, a terminal on the card's 8251:
+The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M4**, a terminal on the card's 8251:
 - ANSI-BBS emulation (the default), with colour, VT52 or TTY;
+- the CP437 character set;
+- 32 or 64 columns, or 80 with PicoVideo; CAPS + 9 cycles through them for now;
 - the bell on the AY;
 - at start-up it puts the card's modem in Hayes mode, checks that Zimodem answers, and
   sets the telnet terminal type;
 - BREAK hangs up if connected, then returns to BASIC.
 
-Still to come: 64 and 80 columns, menus and the phonebook, XMODEM.
+Still to come: menus and the phonebook, XMODEM.
 
 ## Building
 
@@ -61,17 +63,18 @@ characters and attributes both in memory and in the bitmap.
 
 All of it runs in about a second.
 
-To look at what PicoTerm draws, render sample screens with the real ROM font. You need
-the 16 KB TS-2068 HOME ROM image; its font is at 3D00h. The pictures go to
-`build/startup.png` and `build/ansi-menu.png`.
+`tests/test_modes.py` covers the three column modes, switching between them, and the
+font.
+
+To see what PicoTerm draws, render sample screens. The PNGs go to `build/`: the start-up
+screen, an ANSI menu, and a box-drawn menu in 32 columns, 64 (SCLD and PicoVideo) and 80.
 
 ```bash
-.venv/bin/python tools/demo_screens.py path/to/2068-home.rom
+.venv/bin/python tools/demo_screens.py
 ```
 
-`tests/test_tap.py` checks the TAP. The emulator tests run PicoTerm in a headless ZEsarUX
-TS-2068 over ZRCP, and are skipped if ZEsarUX isn't installed:
-- `test_startup.py` covers start-up and the return to BASIC.
-- `test_typewriter.py` covers the keyboard, the TTY emulation and the screen. It presses keys
-  on the emulated matrix, and checks the screen both in memory and through ZEsarUX's OCR. Set `$ZESARUX` to the binary,
-and `$ZESARUX_ROM` to use another ROM such as `TSPICO-23.ROM`.
+## Credits
+
+The CP437 font (`src/video/cp437.asm`) is the one PicoVideo uses for its 80-column mode:
+Bm437_ACM_VGA_8x8 from VileR's [Ultimate Oldschool PC Font
+Pack](https://int10h.org/oldschool-pc-fonts/), licensed CC BY-SA 4.0.

@@ -205,6 +205,40 @@ makes it possible to change column mode in the middle of a session.
 | Scroll one line | ~5.9 KB of LDI, about 27 ms | ~11.8 KB, about 54 ms | ~3.7 KB, about 17 ms |
 | Cursor | XOR an underline | XOR an underline | Invert the cell's attribute |
 
+**As built in M4:**
+- **Driver table:** `vid_set_mode` rewrites five jumps (draw, clear rows, scroll up, scroll
+  down, cursor), sets the column count and writes DECR, keeping bit 7.
+- **Mode changes:** the shadow is re-laid out for the new width, keeping what fits, then
+  the screen is redrawn from it. Rows stay exactly as wide as the mode, which keeps
+  scrolling cheap. A fixed 80-cell row cost 25% more on every 32-column scroll.
+- **64 columns:** this is the 32-column code run twice. A `vid_plane` of 0 or 20h is ORed
+  into the screen addresses, so the same routine works on display file 1 or 2.
+- **80 columns:** text memory is laid out like the shadow, so a scroll copies the moved rows
+  back from the shadow.
+- **Font:** the CP437 font is built in (2 KB). It's the same font PicoVideo uses
+  (`src/video/cp437.asm`; CC BY-SA 4.0, see README).
+- **Switching key:** CAPS + 9 (GRAPHICS) cycles the modes until the menu arrives in M5.
+  It skips 80 columns unless `set_picovideo` is on.
+
+From the PicoVideo v4.2 source (`displayProc.c`, `displayProc80.c`, `busMain.c`), answering
+part of R3:
+- **Mode 5** is the 80-column text mode: codes at 4000h, attributes at 4780h, 80 to a row,
+  in the Spectrum attribute format, drawn from the CP437 font.
+- **Mode 7** is the SCLD's 64-column mode, but with attributes: 5800h for the even
+  columns and 7800h for the odd ones, the same places as in 32 columns.
+- **Mode 6** uses one colour pair, taken from DECR bits 3-5.
+
+Measured on the host machine at 3.5 MHz:
+
+| | 32 col | 64 col | 80 col |
+|---|---|---|---|
+| Scroll one line (shadow + screen) | ~140,000 T, 40 ms | ~380,000 T, about 100 ms | ~200,000 T, 40-55 ms |
+| Change into this mode from 32 (relayout + redraw) | - | about 0.7 s | about 0.3 s |
+
+At 64 columns PicoTerm can show about 10 new lines a second. That's ample for text at
+2400 baud; anything faster is held back by the card's flow control. Two ways to speed up
+the 64-column scroll later: one pass over both display files, and unrolled copies.
+
 **64 columns, in detail** (Technical Manual 5.2.1 and 5.2.3; Zebra OS-64):
 
 - DECR mode field 6. Bits 3-5 pick the ink, and the paper is its complement: 06h is black on
@@ -440,7 +474,7 @@ PicoVideo, and an empty phonebook.
 |---|---|---|---|---|
 | R1 | firmware | Set the receive pacing at run time: e.g. `tpi:modem baud <n>` (with 0 = unpaced) | 300 baud makes downloads and 80-column BBS screens slow | The user edits `MODEM_BAUD` in `config.ini` |
 | R2 | firmware | A binary-safe channel write: e.g. a mode flag that turns off the 17h TAB escape, or a `tpi:chwrb` | XMODEM to a plain file | RAM buffer + `f:` CODE with a +3DOS header |
-| R3 | PicoVideo | A way to detect the board (a readable ID register); the mode 5 and mode 7 attribute layouts | Automatic 80/64-column choice; colour | A manual setting |
+| R3 | PicoVideo | A way to detect the board (a readable ID register). The mode 5 and 7 attribute layouts are now known from the source (section 5). | Choosing 80 columns and 64-column colour automatically | A manual setting (`set_picovideo`) |
 | R4 | firmware / emulators | The 8251 at $73/$77 in `pico_host` (the plain-C 8251 from firmware step 2) with its UART on a TCP socket or a fake Zimodem | Testing in ZEsarUX/Fuse | Host tests only (section 12) |
 
 **Open questions:**

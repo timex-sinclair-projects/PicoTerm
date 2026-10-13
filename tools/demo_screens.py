@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""Render sample screens to build/*.png on the host machine, with the real
-2068 ROM font, for a look at what PicoTerm draws.
+"""Render sample screens to build/*.png on the host machine, for a look at
+what PicoTerm draws in each column mode.
 
-    .venv/bin/python tools/demo_screens.py [path/to/2068-home.rom]
-
-The ROM (16 KB HOME ROM; the font is at 3D00h) defaults to $PICOTERM_ROM.
+    .venv/bin/python tools/demo_screens.py
 """
 
 import os
@@ -36,24 +34,59 @@ BBS_MENU = (
 )
 
 
-def main():
-    rom_path = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("PICOTERM_ROM")
-    if not rom_path:
-        sys.exit(__doc__)
-    with open(rom_path, "rb") as f:
-        font = f.read()[0x3D00:0x4000]
+def box_menu(width):
+    """A CP437 box-drawn BBS menu, centred for this width."""
+    inner = 30
+    left = (width - inner - 2) // 2 + 1
+    def at(row, text):
+        return E + b"%d;%dH" % (row, left) + text
+    out = E + b"0m" + E + b"2J" + E + b"1;36m"
+    out += at(2, b"\xc9" + b"\xcd" * inner + b"\xbb")
+    for i, (key, label, colour) in enumerate([
+            (b"M", b"Message areas", b"32"), (b"F", b"File library", b"32"),
+            (b"W", b"Who's online", b"33"), (b"G", b"Goodbye", b"31")]):
+        line = (E + b"1;37m [" + E + b"1;" + colour + b"m" + key + E + b"1;37m] "
+                + E + b"0;" + colour + b"m" + label.ljust(inner - 5))
+        out += at(3 + i, E + b"1;36m\xba" + line + E + b"1;36m\xba")
+    out += at(7, b"\xc8" + b"\xcd" * inner + b"\xbc")
+    out += E + b"0;44;33m" + E + b"10;1H" + E + b"K"
+    out += b"  PicoTerm in %d columns: \xb0\xb1\xb2\xdb  \x03 \x04 \x05 \x06  " % width
+    out += E + b"0m" + E + b"12;1H" + b"The quick brown fox jumps over the lazy dog. " * 2
+    out += E + b"0m" + E + b"23;1H" + E + b"1;37mYour choice: " + E + b"0m"
+    return out
+
+
+def run(font, picovideo, cols, name, data):
     zm = FakeZimodem()
     acia = Fake8251(zm)
     m = Machine(acia=acia, pico=FakePico(), font=font)
+    m.mem[m.sym["set_picovideo"]] = int(picovideo)
+    m.mem[m.sym["set_cols"]] = cols
     m.run_frames(200)
-    out = os.path.join(HERE, "..", "build")
-    save_png(m, os.path.join(out, "startup.png"), scale=3)
-    zm.to_terminal.extend(BBS_MENU)
-    m.run_until(lambda: not zm.to_terminal, limit=500)
-    m.idle()
-    m.run_frames(40)                 # cursor visible
-    save_png(m, os.path.join(out, "ansi-menu.png"), scale=3)
-    print("build/startup.png, build/ansi-menu.png")
+    if data:
+        zm.to_terminal.extend(data(m.cols()) if callable(data) else data)
+        m.run_until(lambda: not zm.to_terminal, limit=500)
+        m.idle()
+    path = os.path.join(HERE, "..", "build", name)
+    save_png(m, path, scale=3)
+    return "build/" + name
+
+
+def main():
+    rom_path = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("PICOTERM_ROM")
+    font = None
+    if rom_path:
+        with open(rom_path, "rb") as f:
+            font = f.read()[0x3D00:0x4000]
+    made = [
+        run(font, False, 0, "startup.png", None),
+        run(font, False, 0, "ansi-menu.png", BBS_MENU),
+        run(font, False, 0, "box-32.png", box_menu),
+        run(font, False, 1, "box-64-scld.png", box_menu),
+        run(font, True, 1, "box-64-picovideo.png", box_menu),
+        run(font, True, 2, "box-80-picovideo.png", box_menu),
+    ]
+    print("\n".join(made))
 
 
 if __name__ == "__main__":

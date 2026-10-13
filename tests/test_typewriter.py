@@ -28,7 +28,7 @@ class TypewriterTest(unittest.TestCase):
         # ZEsarUX has no 8251, so PicoTerm reports no modem. With local
         # echo on, it's a typewriter: keys go through the key map and the
         # TTY emulation, which is what these tests are about.
-        cls.emu.wait_for_text("No modem", timeout=30)
+        cls.emu.wait_for_shadow(cls.sym, "No modem", timeout=30)
         cls.emu.cmd(f"write-memory {cls.sym['set_echo']} 1")
 
     @classmethod
@@ -72,15 +72,9 @@ class TypewriterTest(unittest.TestCase):
         self.settle()
 
     def assert_screen_matches_shadow(self):
-        """The bitmap (as OCR reads it) agrees with the shadow, row by row.
-        The cursor's row is skipped: its underline reads as '_'."""
-        lines = self.emu.screen().split("\n")
-        cur_row = self.cursor()[0]
-        for r in range(ROWS):
-            if r == cur_row:
-                continue
-            self.assertEqual(lines[r].rstrip(), self.shadow_row(r).rstrip(),
-                             f"row {r}")
+        """The bitmap agrees with the shadow, row by row."""
+        self.assertEqual(self.emu.bitmap_rows(self.sym),
+                         [self.shadow_row(r) for r in range(ROWS)])
 
     # --- tests -------------------------------------------------------------
 

@@ -14,7 +14,12 @@ PORT_DECR       equ 0FFh            ; SCLD: video mode 0-2, 64-col ink 3-5,
                                     ; interrupt inhibit 6, EXROM select 7
 
 DECR_STANDARD   equ 00h             ; video mode field values
-DECR_64COL      equ 06h
+DECR_64COL      equ 06h             ; SCLD 64 columns, one colour (bits 3-5)
+DECR_TEXT80     equ 05h             ; PicoVideo: 80-column text
+DECR_64COLOUR   equ 07h             ; PicoVideo: 64 columns, attributes as in 32
+
+TEXT80_CHR      equ 4000h           ; PicoVideo mode 5: character codes, 80 a row
+TEXT80_ATR      equ 4780h           ;   and their attributes (Spectrum format)
 
 ; --- ROM and system variables -------------------------------------------
 ROM_VERSION     equ 0065h           ; HOME ROM byte: 23h = TS-Pico ROM 2.3

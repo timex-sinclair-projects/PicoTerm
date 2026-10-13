@@ -1,7 +1,7 @@
 ; main.asm - PicoTerm entry point
 ;
-; M3: a terminal on the 8251, with ANSI-BBS (default), VT52 or TTY
-; emulation. At start-up PicoTerm puts the card's
+; M4: a terminal on the 8251, with ANSI-BBS (default), VT52 or TTY
+; emulation, in 32 or 64 columns, or 80 with PicoVideo (CAPS + 9 cycles). At start-up PicoTerm puts the card's
 ; modem in Hayes mode (if the ROM is the TS-Pico's), resets the 8251 and
 ; checks Zimodem answers AT. Then keys go to the modem and received bytes
 ; go to the TTY emulation. BREAK hangs up if connected and returns to BASIC.
@@ -18,7 +18,6 @@ start:
         ld (saved_hl2),hl           ; BASIC needs HL' back
         exx
         ld sp,STACK_TOP
-        call font_init              ; copies the ROM font through CHARS
         call isr_install
         ei
 
@@ -26,6 +25,7 @@ start:
         out (PORT_ULA),a            ; black border
         ld a,07h
         ld (cur_attr),a
+        ld a,(set_cols)
         call vid_init
         call term_reset
         ld hl,msg_banner
@@ -37,6 +37,11 @@ main_loop:
         jr z,.rx
         cp K_MENU
         jp z,exit
+        cp K_COLS
+        jr nz,.key
+        call next_cols
+        jr .rx
+.key:
         call send_key
         call activity
 .rx:
@@ -44,6 +49,23 @@ main_loop:
         jr c,main_loop              ; something arrived: look again at once
         call cursor_blink
         jr main_loop
+
+; next_cols: 32 -> 64 -> 80 -> 32; 80 only with PicoVideo.
+next_cols:
+        ld a,(vid_mode)
+        inc a
+        cp VM_80
+        jr c,.set
+        jr nz,.wrap
+        ld b,a
+        ld a,(set_picovideo)
+        or a
+        ld a,b
+        jr nz,.set
+.wrap:
+        xor a
+.set:
+        jp vid_set_mode
 
 ; send_key: key A to the modem, and to the screen too with local echo.
 send_key:
@@ -220,6 +242,9 @@ exit:
         jr nz,.released
         call acia_off
         call vid_cursor_off
+        ld a,VM_32                  ; the standard screen for BASIC (no redraw:
+        call vid_select             ; it's cleared just below)
+        call vid_rows_table
         ld a,(SV_ATTR_P)
         ld (cur_attr),a
         ld de,0+VID_ROWS-1
@@ -246,9 +271,10 @@ exit:
         INCLUDE "hw/acia.asm"
         INCLUDE "hw/pico.asm"
         INCLUDE "modem/hayes.asm"
-        INCLUDE "video/font.asm"
         INCLUDE "video/vid.asm"
         INCLUDE "video/vid32.asm"
+        INCLUDE "video/vid64.asm"
+        INCLUDE "video/vid80.asm"
         INCLUDE "hw/sound.asm"
         INCLUDE "term/term.asm"
         INCLUDE "term/ansi.asm"
@@ -261,6 +287,11 @@ set_echo:       db 0                ; 1 = local echo (half duplex)
 set_emul:       db EMU_ANSI         ; EMU_TTY, EMU_VT52 or EMU_ANSI
 set_blink:      db 1                ; 0 = ANSI blink doesn't FLASH
 set_bell:       db 1                ; 0 = BEL is silent
+set_cols:       db VM_32            ; VM_32, VM_64 or VM_80 at start-up
+set_picovideo:  db 0                ; 1 = PicoVideo is fitted: 80 columns, and
+                                    ; colour in 64
+set_ink64:      db 7                ; SCLD 64-column ink 0-7 (paper is its
+                                    ; complement): 7 = white on black
 set_init:       db "ATE1V1X1Q0",0
 
 termtype_cmds:  dw tt_tty, tt_vt52, tt_ansi
@@ -270,7 +301,7 @@ tt_ansi:        db 'AT&S"41=ANSI"',0
 
 ; --- text -----------------------------------------------------------------
 
-msg_banner:     db "PicoTerm M3",13,10
+msg_banner:     db "PicoTerm M4",13,10
                 db "BREAK: hang up, back to BASIC",13,10,10,0
 msg_ready:      db "Modem ready.",13,10,0
 msg_no_tpi_modem: db "This TS-Pico has no tpi:modem.",13,10,0
@@ -286,12 +317,15 @@ saved_sp:       dw 0
 saved_hl2:      dw 0
 blink_base:     dw 0
 
+        ALIGN 256
+FONT:                               ; 2 KB, page-aligned
+        INCLUDE "video/cp437.asm"
+
 end_of_code:
 
 ; --- uninitialised data, not in the binary --------------------------------
 
-FONT            equ (end_of_code + 255) & 0FF00h    ; 2 KB, page-aligned
-RX_RING         equ FONT + 2048                     ; 2 KB, page-aligned
+RX_RING         equ (end_of_code + 255) & 0FF00h    ; 2 KB, page-aligned
 SHADOW_CHR      equ RX_RING + RX_SIZE
 SHADOW_ATR      equ SHADOW_CHR + MAX_CELLS
 BSS_END         equ SHADOW_ATR + MAX_CELLS

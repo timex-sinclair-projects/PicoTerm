@@ -2,6 +2,10 @@
 ;
 ; Bitmap and attributes only; the shadow is vid.asm's job. Rows and columns
 ; arrive in B (row 0-23) and C (column 0-31). The font is page-aligned.
+;
+; vid_plane (0 or 20h) is ORed into every screen address: with 20h these
+; routines work on display file 2 (6000h/7800h) instead. The 64-column
+; driver is built on that.
 
 ; COPY32: 32 x LDI. LDI counts BC down, so callers keep B and C elsewhere.
         MACRO COPY32
@@ -21,9 +25,12 @@
 
 ; vid32_cell: HL = the cell's top pixel line. Uses A.
 vid32_cell:
+        ld a,(vid_plane)
+        or high DF1
+        ld h,a
         ld a,b
         and 18h
-        or high DF1
+        or h
         ld h,a
         ld a,b
         and 07h
@@ -43,6 +50,9 @@ vid32_attr:
         ld l,a
         and 03h
         or high ATTR1
+        ld h,a
+        ld a,(vid_plane)
+        or h
         ld h,a
         ld a,l
         and 0E0h
@@ -199,3 +209,5 @@ vid32_cursor:
         cpl
         ld (hl),a
         ret
+
+vid_plane:      db 0                ; 0 = display file 1, 20h = display file 2
