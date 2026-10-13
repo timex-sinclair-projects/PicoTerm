@@ -277,27 +277,124 @@ vid_redraw:
         ld b,0
 .row:
         ld c,0
-.col:
-        push bc
-        call vid_offset
-        ld de,SHADOW_ATR
-        add hl,de
-        ld e,(hl)
-        ld a,e
-        ld de,SHADOW_CHR-SHADOW_ATR
-        add hl,de
-        ld e,a
-        ld a,(hl)
-        pop bc
-        call vid32_draw
-        inc c
         ld a,(vid_cols)
-        cp c
-        jr nz,.col
+        ld d,a
+        push bc
+        call vid_redraw_cells
+        pop bc
         inc b
         ld a,b
         cp VID_ROWS
         jr nz,.row
+        ret
+
+; vid_redraw_cells: draw D cells from B,C along one row, from the shadow.
+vid_redraw_cells:
+        ld a,d
+        or a
+        ret z
+.cell:
+        push de
+        call vid_offset
+        push hl
+        ld de,SHADOW_ATR
+        add hl,de
+        ld e,(hl)
+        pop hl
+        push de
+        ld de,SHADOW_CHR
+        add hl,de
+        ld a,(hl)
+        pop de                      ; E = attribute
+        call vid32_draw
+        pop de
+        inc c
+        dec d
+        jr nz,.cell
+        ret
+
+; vid_insert_cells: D (1 or more) blank cells at B,C; the rest of the row
+; moves right, and what goes past the end is lost. C + D <= vid_cols.
+vid_insert_cells:
+        ld a,d
+        ld (vid_n),a
+        ld a,(vid_cols)
+        sub c
+        sub d
+        jr z,.blank                 ; nothing left to move
+        ld (vid_cnt),a
+        push bc
+        ld a,b
+        call vid_rowstart
+        ld a,(vid_cols)
+        dec a
+        call vid_add_a
+        ld d,h
+        ld e,l                      ; DE = the row's last cell
+        ld a,(vid_n)
+        ld c,a
+        ld b,0
+        or a
+        sbc hl,bc                   ; HL = the last cell that moves
+        ld a,(vid_cnt)
+        ld c,a
+        ld a,1
+        call vid_shadow_copy
+        pop bc
+        push bc
+        ld a,(vid_n)
+        add a,c
+        ld c,a
+        ld a,(vid_cnt)
+        ld d,a
+        call vid_redraw_cells
+        pop bc
+.blank:
+        ld a,(vid_n)
+        ld d,a
+        jp vid_clear_cells
+
+; vid_delete_cells: remove D (1 or more) cells at B,C; the rest of the row
+; moves left, and blanks fill the end. C + D <= vid_cols.
+vid_delete_cells:
+        ld a,d
+        ld (vid_n),a
+        ld a,(vid_cols)
+        sub c
+        sub d
+        jp z,vid_clear_cells        ; everything from B,C goes
+        ld (vid_cnt),a
+        push bc
+        call vid_offset
+        ld d,h
+        ld e,l                      ; DE = B,C
+        ld a,(vid_n)
+        call vid_add_a              ; HL = the first cell that moves
+        ld a,(vid_cnt)
+        ld c,a
+        ld b,0
+        xor a
+        call vid_shadow_copy
+        pop bc
+        push bc
+        ld a,(vid_cnt)
+        ld d,a
+        call vid_redraw_cells
+        pop bc
+        ld hl,vid_n
+        ld a,(vid_cols)
+        sub (hl)
+        ld c,a
+        ld d,(hl)
+        jp vid_clear_cells
+
+; vid_add_a: HL += A. Uses A.
+vid_add_a:
+        add a,l
+        ld l,a
+        adc a,h
+        sub l
+        ld h,a
         ret
 
 ; --- state ----------------------------------------------------------------
@@ -307,4 +404,6 @@ cur_col:        db 0                ; cur_col then cur_row: LD BC,(cur_col)
 cur_row:        db 0
 cur_attr:       db 07h              ; white ink on black paper
 vid_cursor_shown: db 0
+vid_n:          db 0
+vid_cnt:        db 0
 vid_rowoff:     ds (VID_ROWS+1)*2   ; shadow offset of each row, and the end

@@ -61,7 +61,7 @@ def made_up_glyph(code):
 
 
 class Machine:
-    def __init__(self, acia=None, pico=None, rom_version=0x23):
+    def __init__(self, acia=None, pico=None, rom_version=0x23, font=None):
         self.sym = symbols()
         self.acia = acia
         self.pico = pico
@@ -69,8 +69,9 @@ class Machine:
         self.mem = m.memory
         with open(BIN, "rb") as f:
             m.set_memory_block(ORG, f.read())
-        font = b"".join(made_up_glyph(c) for c in range(32, 128))
-        m.set_memory_block(FONT_SRC, font)
+        if font is None:
+            font = b"".join(made_up_glyph(c) for c in range(32, 128))
+        m.set_memory_block(FONT_SRC, font[:768])
         self.poke16(0x5C36, FONT_SRC - 256)     # CHARS
         self.mem[0x0065] = rom_version          # ROM version byte
         self.mem[0x5CC2] = 0x80                 # VIDMOD: DF2 already open
@@ -92,6 +93,9 @@ class Machine:
         self.frame = 0
         self.exited = False
         self.decr_writes = []
+        self.ay = [0] * 16
+        self.ay_reg = 0
+        self.ay_log = []
 
     # --- memory ------------------------------------------------------------
 
@@ -125,6 +129,32 @@ class Machine:
                 if dev is not None and hasattr(dev, "tick"):
                     dev.tick()
             self.m.on_handle_active_int()
+
+    def run_to(self, addr, limit=500):
+        """Run, frame interrupts and all, until the CPU reaches addr."""
+        self.m.set_breakpoint(addr)
+        try:
+            for _ in range(limit):
+                self.m.ticks_to_stop = FRAME_T
+                self.m.run()
+                if self.m.pc == addr:
+                    return True
+                if self.m.pc == EXIT_TRAP:
+                    self.exited = True
+                    return False
+                self.frame += 1
+                for dev in (self.acia, self.pico):
+                    if dev is not None and hasattr(dev, "tick"):
+                        dev.tick()
+                self.m.on_handle_active_int()
+            return False
+        finally:
+            self.m.clear_breakpoint(addr)
+
+    def idle(self):
+        """Run until every received byte has been handled: PicoTerm only
+        blinks the cursor when its ring is empty and the screen is done."""
+        return self.run_to(self.sym["cursor_blink"])
 
     def stop_at(self, addr):
         """Run (without frame interrupts) until the CPU reaches addr."""
@@ -178,6 +208,11 @@ class Machine:
             self.decr_writes.append(v)
         elif lo == 0xF4:
             self.hsr = v
+        elif lo == 0xF5:
+            self.ay_reg = v & 0x0F
+        elif lo == 0xF6:
+            self.ay[self.ay_reg] = v
+            self.ay_log.append((self.ay_reg, v))
 
     # --- keyboard ----------------------------------------------------------
 
@@ -206,6 +241,14 @@ class Machine:
         base = self.sym["SHADOW_CHR"]
         return [self.peek(base + r * cols, cols).decode("latin-1")
                 for r in range(rows)]
+
+    def shadow_attrs(self, cols=32, rows=24):
+        base = self.sym["SHADOW_ATR"]
+        return [list(self.peek(base + r * cols, cols)) for r in range(rows)]
+
+    def screen_attrs(self):
+        """The 32-column attribute file, as the SCLD shows it."""
+        return [list(self.peek(0x5800 + r * 32, 32)) for r in range(24)]
 
     def screen_text(self):
         """Read the 32-column bitmap back through PicoTerm's own font."""

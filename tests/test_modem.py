@@ -42,7 +42,7 @@ class ModemTest(unittest.TestCase):
         m = self.start()
         self.assertEqual(self.pico.commands, ["tpi:modem hayes", "tpi:modem on"])
         self.assertEqual(self.acia.ctrl_log[:6], RESET)
-        self.assertEqual(self.zm.commands, ["AT", "ATE1V1X1Q0"])
+        self.assertEqual(self.zm.commands, ["AT", "ATE1V1X1Q0", 'AT&S"41=ANSI"'])
         self.assertIn("Modem ready.", text(m))
         self.assert_screen_is_shadow()
 

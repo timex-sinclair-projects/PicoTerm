@@ -1,6 +1,7 @@
 ; main.asm - PicoTerm entry point
 ;
-; M2: a plain terminal on the 8251. At start-up PicoTerm puts the card's
+; M3: a terminal on the 8251, with ANSI-BBS (default), VT52 or TTY
+; emulation. At start-up PicoTerm puts the card's
 ; modem in Hayes mode (if the ROM is the TS-Pico's), resets the 8251 and
 ; checks Zimodem answers AT. Then keys go to the modem and received bytes
 ; go to the TTY emulation. BREAK hangs up if connected and returns to BASIC.
@@ -86,13 +87,13 @@ send_key:
         adc a,h
         sub l
         ld h,a
-        ld a,(hl)
-        push af
         ld a,1Bh
         call acia_send
+        ld a,(set_emul)
+        cp EMU_VT52
         ld a,'['
-        call acia_send
-        pop af
+        call nz,acia_send           ; ANSI and TTY: ESC [ A; VT52: ESC A
+        ld a,(hl)
 .plain:
         jp acia_send
 
@@ -132,8 +133,12 @@ activity_c:
         pop af
         ret
 
-; cursor_blink: the cursor shows for 32 frames and hides for 32.
+; cursor_blink: the cursor shows for 32 frames and hides for 32, unless
+; the host has hidden it.
 cursor_blink:
+        ld a,(term_cursor)
+        or a
+        jp z,vid_cursor_off
         ld hl,(ticks)
         ld de,(blink_base)
         or a
@@ -177,6 +182,16 @@ modem_start:
         jp term_puts
 .init:
         ld hl,set_init
+        ld de,3*50
+        call hayes_command
+        ld a,(set_emul)             ; the terminal type for telnet
+        add a,a
+        ld hl,termtype_cmds
+        call vid_add_a
+        ld a,(hl)
+        inc hl
+        ld h,(hl)
+        ld l,a
         ld de,3*50
         call hayes_command
         ld hl,msg_ready
@@ -234,17 +249,28 @@ exit:
         INCLUDE "video/font.asm"
         INCLUDE "video/vid.asm"
         INCLUDE "video/vid32.asm"
-        INCLUDE "term/tty.asm"
+        INCLUDE "hw/sound.asm"
+        INCLUDE "term/term.asm"
+        INCLUDE "term/ansi.asm"
+        INCLUDE "term/vt52.asm"
 
 ; --- settings (the Settings screen and picoterm.cfg come in M5) ----------
 
 set_backspace:  db 08h              ; or 7Fh
 set_echo:       db 0                ; 1 = local echo (half duplex)
+set_emul:       db EMU_ANSI         ; EMU_TTY, EMU_VT52 or EMU_ANSI
+set_blink:      db 1                ; 0 = ANSI blink doesn't FLASH
+set_bell:       db 1                ; 0 = BEL is silent
 set_init:       db "ATE1V1X1Q0",0
+
+termtype_cmds:  dw tt_tty, tt_vt52, tt_ansi
+tt_tty:         db 'AT&S"41=DUMB"',0
+tt_vt52:        db 'AT&S"41=VT52"',0
+tt_ansi:        db 'AT&S"41=ANSI"',0
 
 ; --- text -----------------------------------------------------------------
 
-msg_banner:     db "PicoTerm M2",13,10
+msg_banner:     db "PicoTerm M3",13,10
                 db "BREAK: hang up, back to BASIC",13,10,10,0
 msg_ready:      db "Modem ready.",13,10,0
 msg_no_tpi_modem: db "This TS-Pico has no tpi:modem.",13,10,0

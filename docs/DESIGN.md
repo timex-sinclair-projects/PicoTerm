@@ -257,6 +257,22 @@ backspace sends 08h or 7Fh; local echo on/off; strip bit 7.
 - Unknown sequences are parsed to their end and ignored.
 - ANSI music (`ESC [ M`) is ignored in the first version; the AY could play it later.
 
+As built in M3:
+- **Parameters:** a CSI sequence keeps up to 8 parameters, each held at 255 at most. A
+  private marker (`<`, `=`, `>`, `?`) and intermediate bytes are recognised. Only `?`
+  sequences ending `h` or `l` are acted on; the rest are parsed and dropped.
+- **Controls inside a sequence** (C0) act at once. ESC starts a new sequence, and CAN or SUB
+  abandons it.
+- **Strings:** OSC strings are skipped up to BEL or ST.
+- **Following ANSI.SYS, which BBS screens are drawn for:** `ESC [ 2 J` homes the cursor, and
+  FF clears the screen and homes, keeping the colours.
+- **Cursor:** IL and DL put the cursor in column 0. CUU and CUD stop at the margins of the
+  scrolling region when they start inside it.
+- **Extended colours:** SGR 38/48 with `5;n` use the first 16 colours; `2;r;g;b` is
+  skipped.
+- **Replies** go to the modem: CPR (`ESC [ row ; col R`), DA (`ESC [ ? 1 ; 0 c`), and DSR 5
+  (`ESC [ 0 n`).
+
 **VT52**: `ESC A B C D H I J K Y r c Z` (identify, answered with `ESC / K`) and `F G`
 (graphics mode), the subset MTERM's table handled plus the rest of the standard set.
 

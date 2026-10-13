@@ -5,11 +5,14 @@ Zimodem. It talks to the card's 8251 at ports $73/$77 as a Hayes modem over WiFi
 and 64-column displays, PicoVideo's 80 columns, ANSI-BBS/VT52/TTY emulation and XMODEM
 downloads to the TS-Pico's SD card.
 
-The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M2**, a plain terminal:
-- at start-up it puts the card's modem in Hayes mode and checks that Zimodem answers;
-- keys go to the 8251, and received text goes to the TTY emulation on the 32-column
-  screen;
+The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M3**, a terminal on the card's 8251:
+- ANSI-BBS emulation (the default), with colour, VT52 or TTY;
+- the bell on the AY;
+- at start-up it puts the card's modem in Hayes mode, checks that Zimodem answers, and
+  sets the telnet terminal type;
 - BREAK hangs up if connected, then returns to BASIC.
+
+Still to come: 64 and 80 columns, menus and the phonebook, XMODEM.
 
 ## Building
 
@@ -53,7 +56,18 @@ make test
   BBS;
 - a fake TS-Pico, with its command protocol.
 
-It runs in under a second.
+`tests/test_ansi.py` does the same for the ANSI, VT52 and TTY emulations. It checks the
+characters and attributes both in memory and in the bitmap.
+
+All of it runs in about a second.
+
+To look at what PicoTerm draws, render sample screens with the real ROM font. You need
+the 16 KB TS-2068 HOME ROM image; its font is at 3D00h. The pictures go to
+`build/startup.png` and `build/ansi-menu.png`.
+
+```bash
+.venv/bin/python tools/demo_screens.py path/to/2068-home.rom
+```
 
 `tests/test_tap.py` checks the TAP. The emulator tests run PicoTerm in a headless ZEsarUX
 TS-2068 over ZRCP, and are skipped if ZEsarUX isn't installed:
