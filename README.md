@@ -103,7 +103,9 @@ PicoTerm's own menu, phonebook, entry, settings and WiFi screens.
 .venv/bin/python tools/demo_screens.py
 ```
 
-## Credits
+## License and credits
+
+PicoTerm is MIT-licensed (`LICENSE`).
 
 The CP437 font (`src/video/cp437.asm`) is the one PicoVideo uses for its 80-column mode:
 Bm437_ACM_VGA_8x8 from VileR's [Ultimate Oldschool PC Font
