@@ -161,6 +161,7 @@ pump_rx:
         call rx_get
         jr nc,.empty
         call hayes_watch
+        ld (pump_last),a
         push af
         ld a,(rx_mode)
         cp RX_CAPTURE
@@ -176,6 +177,16 @@ pump_rx:
         pop af
         scf
         push af
+        ld a,(pump_to_result)       ; waiting for a result: stop at the LF
+        or a                        ; that ends its line, so what follows
+        jr z,.more                  ; stays in the ring
+        ld a,(pump_last)
+        cp 0Ah
+        jr nz,.more
+        ld a,(hayes_result)
+        or a
+        jr nz,.out
+.more:
         djnz .next
         jr .out
 .empty:
@@ -250,6 +261,17 @@ modem_start:
         ld hl,msg_no_answer
         jp term_puts
 .init:
+        ; The card queues what's sent before the line is up and delivers it
+        ; all at once, so more ATs may be on their way: let their echoes and
+        ; OKs arrive out of sight before the init string, which would
+        ; otherwise take one of those OKs for its own.
+        call capture_reset
+        ld a,RX_CAPTURE
+        ld (rx_mode),a
+        ld de,AT_DRAIN
+        call wait_ticks
+        xor a
+        ld (rx_mode),a
         ld hl,set_init
         ld de,3*50
         call hayes_command
@@ -386,7 +408,9 @@ cmd_modem_hayes: db "tpi:modem hayes",0
 cmd_at:         db "AT",0
 AT_TRIES        equ 12
 AT_WAIT         equ 60              ; ticks: 1 s at 60 Hz, 1.2 s at 50 Hz
+AT_DRAIN        equ 30              ; ticks: half a second
 
+pump_last:      db 0                ; the last byte pump_rx took
 saved_sp:       dw 0
 saved_hl2:      dw 0
 blink_base:     dw 0

@@ -331,8 +331,14 @@ size, or detect it with `6n`. Zimodem's telnet terminal type is set with
 4. Send `AT` CR and wait 1 s for `OK`; try 12 times (about 12 s). The card lets bytes
    through to Zimodem only 2 s after the first 8251 write (`board_v3` `modem_service`,
    `MODEM_BOOT_MS`). Zimodem can take longer than that to start, especially while it
-   joins WiFi, and anything sent before it's listening is lost. Found on hardware,
-   2026-10-14: a single `AT` with a 3 s wait gave "No answer", then Zimodem's banner. If there's no answer, open the terminal anyway in
+   joins WiFi. Found on hardware, 2026-10-14: a single `AT` with a 3 s wait gave
+   "No answer", then Zimodem's banner.
+   - **The card queues** what's sent before the line is up, and delivers it all at once.
+     So several `AT`s can reach Zimodem together. After the first `OK`, PicoTerm drains
+     for half a second with the replies captured, out of sight, so they don't show and
+     don't answer for the init string.
+   - **While a command waits for its result,** `pump_rx` stops at the LF ending the
+     result line, so later bytes stay in the ring. If there's no answer, open the terminal anyway in
    "no modem" state, so the user can still type.
 5. Send the init string (a setting): by default `ATE1V1X1Q0` and `AT&S"41=ANSI"`. Echo stays
    on so the user can type AT commands themselves.

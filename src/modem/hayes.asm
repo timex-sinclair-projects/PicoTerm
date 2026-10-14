@@ -154,13 +154,15 @@ hayes_send:
 hayes_wait:
         ld hl,(ticks)
         ld (hayes_t0),hl
+        ld a,1
+        ld (pump_to_result),a
 .loop:
         push de
         call pump_rx
         pop de
         ld a,(hayes_result)
         or a
-        ret nz
+        jr nz,.done
         ld hl,(ticks)
         push de
         ld de,(hayes_t0)
@@ -171,6 +173,11 @@ hayes_wait:
         sbc hl,de
         jr c,.loop
         xor a
+.done:
+        push af
+        xor a
+        ld (pump_to_result),a
+        pop af
         ret
 
 ; hayes_command: hayes_send, then hayes_wait. A = the result.
@@ -226,6 +233,7 @@ cmd_ath:        db "ATH",0
 ; --- state ----------------------------------------------------------------
 
 hayes_result:   db HR_NONE
+pump_to_result: db 0                ; 1 while hayes_wait waits: pump_rx stops at a result
 hayes_online:   db 0
 hayes_len:      db 0
 hayes_t0:       dw 0

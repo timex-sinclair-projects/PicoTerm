@@ -138,11 +138,13 @@ class FakeZimodem:
 
     BANNER = b"\r\nZimodem Firmware v4.0.3\r\nREADY.\r\n"
 
-    def __init__(self, hosts=None, networks=None, deaf_frames=0):
+    def __init__(self, hosts=None, networks=None, deaf_frames=0, queue_early=False):
         """deaf_frames: until this frame the line isn't up (the card holds
         the ESP32's line down while Zimodem boots: board_v3 modem_service);
         bytes sent before then are lost. Then Zimodem's banner arrives."""
         self.deaf_frames = deaf_frames
+        self.queue_early = queue_early      # the card holds bytes until line-up
+        self.early = bytearray()
         self.hosts = hosts if hosts is not None else {"bbs.example:23": EchoBBS}
         # WiFi networks in range: ssid -> (rssi, password or None if open)
         self.networks = networks if networks is not None else {
@@ -171,7 +173,7 @@ class FakeZimodem:
 
     def from_terminal(self, b, frame):
         if frame < self.deaf_frames:
-            self.lost.append(b)
+            (self.early if self.queue_early else self.lost).append(b)
             return
         if self.mode == "cmd":
             if self.echo:
@@ -198,6 +200,9 @@ class FakeZimodem:
         self.frame = frame
         if self.deaf_frames and frame == self.deaf_frames:
             self.send(self.BANNER)
+            early, self.early = bytes(self.early), bytearray()
+            for b in early:                     # delivered at line-up, all at once
+                self.from_terminal(b, frame)
         if self.mode == "stream":
             if self.plus == 3 and frame - self.plus_frame > GUARD_FRAMES:
                 self.plus = 0

@@ -105,6 +105,22 @@ class ModemTest(unittest.TestCase):
             self.assertIn(b"AT\r", bytes(self.zm.lost))     # the early tries were lost
             self.assertIn("ATE1V1X1Q0", self.zm.commands)
 
+    def test_queued_ats_are_drained_out_of_sight(self):
+        # Hardware, cold start: the card queues what's sent before line-up and
+        # delivers it after, so several ATs reach Zimodem at once. PicoTerm
+        # goes on at the first OK and keeps the rest of the replies off screen.
+        self.zm = FakeZimodem(deaf_frames=250, queue_early=True)
+        self.acia = Fake8251(self.zm)
+        self.m = Machine(acia=self.acia, pico=FakePico())
+        self.m.run_frames(500)
+        t = text(self.m)
+        self.assertIn("Modem ready.", t)
+        self.assertGreater(self.zm.commands.count("AT"), 1)    # several got through
+        self.assertEqual(t.count("\nAT\n"), 1)                 # one shown
+        self.assertEqual(t.count("OK"), 3)                     # AT, init, termtype
+        cmds = self.zm.commands
+        self.assertEqual(cmds[cmds.index("ATE1V1X1Q0") - 1], "AT")
+
     def test_zimodem_never_answers(self):
         m = self.slow_zimodem(10 ** 6, 900)
         self.assertIn("No answer from the modem.", text(m))
