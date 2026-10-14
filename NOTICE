@@ -1,4 +1,6 @@
 PicoTerm is under the MIT License (LICENSE), except for one file:
-font Bm437_ACM_VGA_8x8 from VileR's Ultimate Oldschool PC Font Pack
-(https://int10h.org/oldschool-pc-fonts/), licensed CC BY-SA 4.0
-(https://creativecommons.org/licenses/by-sa/4.0/).
+
+src/video/cp437.asm holds the CP437 font Bm437_ACM_VGA_8x8 from VileR's
+Ultimate Oldschool PC Font Pack (https://int10h.org/oldschool-pc-fonts/),
+licensed CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/).
+PicoVideo uses the same font for its 80-column mode.
