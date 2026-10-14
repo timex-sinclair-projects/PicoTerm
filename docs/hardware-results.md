@@ -26,7 +26,7 @@ Runs of `docs/hardware-test-checklist.md` on real hardware. The newest are first
 | 5.3 CP437 chart | Pass |
 | 5.4 Cursor report | Pass |
 | 7.1 Flood at 300 baud | Pass: all 200 lines, in order |
-| 7.2 Flood at MODEM_BAUD=0 (Q5) | Pass, in 32 columns, without `ATF1`. The server wrote all 10.2 KB within a second, and all 200 lines arrived in order. Back-pressure held about 4 KB beyond the card's 4 KB ring and PicoTerm's 2 KB. Either Zimodem obeyed the card's XOFF, or TCP held the rest in the server's socket: not measured which. |
+| 7.2 Flood at MODEM_BAUD=0 (Q5) | **Fail: data lost.** In 32 columns one run looked complete. In 64 columns characters went missing around line 86 on one run and line 60 on the next (one run took 21 s). The card's counters: `m_rx_lost` 9798 of `m_rx` 32623, because the DMA lapped its 4 KB `line_rx` ring. In Hayes mode the card never sends XOFF: `modem2050.c` does XOFF/XON only `if (!hayes && state == CONNECTED)`, because in Hayes mode Zimodem's settings are the user's. So at `MODEM_BAUD=0` nothing paces Zimodem. XMODEM is unaffected, since the receiver paces it. |
 | 7.3 Display rate | "Under 2 minutes" in 32 columns (an estimate: about 90 characters a second). The host model takes about 35 s (290 characters a second). To be timed with the server's new flood timer. |
 | Start-up drain (`5cf5987`) | Pass: one `AT`/`OK` on a cold start |
 | 9.1 XMODEM 3,000 bytes, CRC | Pass. 24 blocks, 8.8 s, 0 NAKs. 3,200-byte file: PLUS3DOS header (CODE, 3,072 bytes, 32768, checksum good), then the data and 72 x 1Ah, exact |
@@ -54,5 +54,7 @@ Runs of `docs/hardware-test-checklist.md` on real hardware. The newest are first
 - **Q7:** NAWS isn't sent; telnet passes FFh cleanly.
 
 **Still open:**
-- **Q5:** back-pressure held without `ATF1` (7.2), so PicoTerm needs nothing. Whether the card's XOFF or TCP did the holding is still to be confirmed.
+- **Q5: answered, and a problem.** In Hayes mode nothing slows Zimodem except
+  `MODEM_BAUD`, so a fast flood overflows the card's ring. The fix is still to be chosen:
+  PicoTerm's own XON/XOFF, the card's XON/XOFF behind an option, or a pace (#298).
 - **Not yet run:** section 3 (key legends), 5.5-5.8, section 6, section 8 and section 10.

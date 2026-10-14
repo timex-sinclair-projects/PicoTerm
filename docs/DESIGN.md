@@ -180,8 +180,11 @@ Makefile
   byte from the ring and pass it to the emulator. Several ring bytes are handled per key check.
 - **Only the ISR reads $73.** The main loop writes $73 (with TxRDY checks) and writes command
   bytes to $77 with interrupts off.
-- **Back-pressure works without our own XON/XOFF.** If the display falls behind, the ring
-  fills, the ISR stops reading, the card's 4 KB ring fills, and the card XOFFs Zimodem.
+- **Back-pressure: wrong, as built (found on hardware, 2026-10-14).** The plan was: if the
+  display falls behind, the ring fills, the ISR stops reading, the card's 4 KB ring fills,
+  and the card XOFFs Zimodem. But the card only sends XOFF in 2050 mode. In Hayes mode
+  it leaves Zimodem's settings alone, so at `MODEM_BAUD=0` a fast host overflows the
+  card's ring and data is lost (Q5).
   (In Hayes mode, who turns on Zimodem's XON/XOFF is open question Q5.)
 - During long operations (SD writes, full-screen redraws) the ISR keeps receiving, so nothing
   waits on the main loop.
