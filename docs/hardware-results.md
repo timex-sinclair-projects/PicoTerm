@@ -35,10 +35,14 @@ Runs of `docs/hardware-test-checklist.md` on real hardware. The newest are first
 | 9.7 Checksum only | Pass: 8 blocks |
 | 9.8 FFh-heavy, raw | Pass: exact |
 | 9.9 FFh-heavy, telnet | Pass: 16 blocks, 7.2 s, 0 NAKs, exact. Zimodem undoubles IAC (Q7) |
+| 9.10 Cancel | Pass: PicoTerm said "Cancelled." BREAK came at the very end, so the last ACK and CAN x 5 arrived together. The test server's sender then stuck after EOT, a server bug (sender fixed: CAN in any state) |
 
 **Found on the way, in the test server rather than PicoTerm:**
 - **The XMODEM deadline:** a flat 90 s was too short at 300 baud, where each block takes
   about 4.5 s. It's now 60 s of silence (`cdeaf98`).
+- **CAN after EOT:** the sender ignored CAN once it had sent EOT, and typing kept its
+  silence timer from running out. It now cancels on CAN in any state, and ends on any
+  other byte after EOT.
 - **The menu after a deadline:** it took late NAKs as commands and redrew itself. At
   300 baud that kept restarting PicoTerm's block wait, so NAKs came every 25 s.
 

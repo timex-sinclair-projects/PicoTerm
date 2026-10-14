@@ -594,7 +594,10 @@ class XmodemSender:
 
     def receive(self, b):
         self.received.append(b)
-        if self.silent:
+        if self.silent or self.state in ("done", "cancelled", "ended"):
+            return
+        if b == self.CAN:                   # the receiver gives up: in any state
+            self.state = "cancelled"
             return
         if self.state == "wait":
             if b == ord("C") and not self.checksum_only:
@@ -631,3 +634,5 @@ class XmodemSender:
                 self.state = "done"
             elif b == self.NAK:
                 self.out.append(self.EOT)
+            else:
+                self.state = "ended"        # the receiver has moved on (typing)

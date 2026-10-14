@@ -269,7 +269,7 @@ class Session:
         # the card's default 300 baud a block takes over 4 s to arrive, so
         # 6912 bytes take about 4 minutes. MAX_TIME is a backstop.
         start = last = time.time()
-        while (sender.state not in ("done", "cancelled")
+        while (sender.state not in ("done", "cancelled", "ended")
                and time.time() - last < self.IDLE_LIMIT
                and time.time() - start < self.MAX_TIME):
             b = await self.read(1)

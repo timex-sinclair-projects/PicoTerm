@@ -258,7 +258,8 @@ silence.
 - [ ] **9.9 (6) FFh-heavy, telnet port (Q7):** saved and exact? _____ Board 1 (2026-10-14):
   exact, 0 NAKs, so Zimodem undoubles IAC in stream mode. If a later Zimodem fails here,
   the errors count up and it ends "Too many errors".
-- [ ] **9.10 Cancel:** BREAK during a transfer gives "Cancelled.", the server's log shows
+- [ ] **9.10 Cancel:** press BREAK early in a transfer, within the first few blocks (at the
+  very end, PicoTerm's last ACK can arrive with the CANs). BREAK gives "Cancelled.", the server's log shows
   CAN x 5, and the server says "XMODEM cancelled".
 - [ ] **9.11 In 64 columns:** start in 64 columns. PicoTerm drops to 32 during the
   transfer and returns to 64 after.
