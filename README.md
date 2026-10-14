@@ -5,7 +5,7 @@ Zimodem. It talks to the card's 8251 at ports $73/$77 as a Hayes modem over WiFi
 and 64-column displays, PicoVideo's 80 columns, ANSI-BBS/VT52/TTY emulation and XMODEM
 downloads to the TS-Pico's SD card.
 
-The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M5**, a terminal on the card's 8251:
+The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M6**, all the planned milestones:
 - ANSI-BBS emulation (the default), with colour, VT52 or TTY;
 - the CP437 character set;
 - 32 or 64 columns, or 80 with PicoVideo;
@@ -14,12 +14,14 @@ The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M5**, a terminal on the 
   - a phonebook of 20 hosts, each with its own settings;
   - WiFi: scan, join, and save as the modem's default;
   - settings;
+  - **XMODEM downloads** (CRC, 1K or checksum) to the TS-Pico's SD card;
   - hang up, clear the screen, quit to BASIC;
-- settings and the phonebook are saved in `picoterm.cfg` on the TS-Pico's SD card;
-- at start-up it puts the card's modem in Hayes mode, checks that Zimodem answers, and
-  sets the telnet terminal type.
+- settings and the phonebook are saved in `picoterm.cfg` on the SD card.
 
-Still to come: XMODEM.
+Downloads are received into memory (at most 6,912 bytes). They're saved the way
+`SAVE "f:name" CODE` saves, so the file starts with a 128-byte +3DOS header. Once the
+TS-Pico firmware has a binary-safe channel write, downloads can go straight to the card at
+any size (docs/DESIGN.md, R2).
 
 ## Building
 
@@ -70,6 +72,11 @@ All of it runs in about a second.
 
 `tests/test_modes.py` covers the three column modes, switching between them, and the
 font.
+
+`tests/test_xmodem.py` covers downloads: CRC, 1K and checksum blocks; damaged, cut and
+repeated blocks; cancelling from either end; the size limit; replacing a file; and the
+64-column switch. The fake BBS sends by XMODEM, and the fake TS-Pico checks the SAVE
+byte by byte and keeps the file.
 
 `tests/test_menus.py` covers the menu, settings, `picoterm.cfg`, the phonebook and
 WiFi. In these tests the fake TS-Pico keeps files, and the fake Zimodem scans and joins

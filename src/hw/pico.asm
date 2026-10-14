@@ -80,9 +80,17 @@ pico_wait_idle:
 ; (timeout, or the Pico abandoned the transaction). Keeps BC, DE, HL.
 pico_wait_ready:
         push bc
+        ld c,2
+        jr pico_wait_c
+
+; pico_wait_long: the same for up to about 25 s (a SAVE's final status
+; comes after the card has been written). Keeps BC, DE, HL.
+pico_wait_long:
+        push bc
+        ld c,30
+pico_wait_c:
         push hl
         ld hl,0
-        ld c,2
 .poll:
         in a,(PICO_STAT)
         bit PST_READY,a
@@ -185,14 +193,21 @@ pico_send:
         or a
         ret
 
-; pico_reply: read a status, or an 81h message (status, text, 00h).
-; A = the status; PS_NOANSWER if the answer never came.
+; pico_reply: read a status, an 81h message (status, text, 00h), or an
+; 86h/88h listing or question (status, then pages of text each ended by 00h
+; and a key, the whole ended by 03h). The key sent at each 00h is
+; pico_auto_key: PicoTerm asks its own questions first. A = the status;
+; PS_NOANSWER if the answer never came.
 pico_reply:
         call pico_wait_ready
         jr c,.none
         in a,(PICO_DATA)
         cp 81h
         jr z,.msg
+        cp 86h
+        jr z,.pages
+        cp 88h
+        jr z,.pages
         cp 80h
         ret c                       ; a plain status
         ld a,03h                    ; anything else: abort it
@@ -225,6 +240,50 @@ pico_reply:
         jr .text
 .end:
         pop af
+        ret
+.pages:
+        call pico_rx                ; the status
+        push af
+.page:
+        call pico_text
+        jr nc,.page
+        cp 03h
+        jr z,.end                   ; the end
+        call pico_wait_ready        ; a page or a question: answer it
+        jr c,.lost
+        ld a,(pico_auto_key)
+        out (PICO_DATA),a
+        call pico_wait_ready
+        jr nc,.page
+.lost:
+        pop af
+        xor a
+        ret
+
+; pico_text: one character of an answer to pico_print. C and A = 00h or
+; 03h at a terminator. Value bytes after 10h-17h are skipped.
+pico_text:
+        call pico_rx
+        or a
+        scf
+        ret z
+        cp 03h
+        scf
+        ret z
+        cp 10h
+        jr c,.put
+        cp 18h
+        jr nc,.put
+        cp 16h
+        jr c,.one
+        call pico_rx
+.one:
+        call pico_rx
+        or a
+        ret
+.put:
+        call pico_print
+        or a
         ret
 
 ; pico_data: send the command at HL (CODE numbers in pico_pmr1/2) and read
@@ -282,5 +341,6 @@ pico_data:
         xor a
         ret
 
+pico_auto_key:  db 'N'              ; the answer to a question from the Pico
 pico_pmr1:      dw 0                ; the CODE numbers for the next command
 pico_pmr2:      dw 0

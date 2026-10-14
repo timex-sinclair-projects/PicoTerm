@@ -533,6 +533,50 @@ upload, and capturing a session to a file. Uploads have a catch: with Zimodem's 
 Zimodem's `AT&G` (fetch a file over HTTP) is another way to get files that may be worth a
 look.
 
+### As built in M6 (the RAM fallback)
+
+**Flow:** BREAK, X, a file name (default `download.bin`), then "Replace?" if the file
+exists. Start the download on the BBS first; PicoTerm then asks for it.
+
+**Receiving** (`xfer/xmodem.asm`):
+- **Start:** `C` three times, 3 s apart, then NAK for checksums.
+- **Blocks:** SOH or STX. A bad block gets a NAK once the line has been quiet for 1 s. It's
+  NAK, not `C`, even before the first good block: a sender that has started ignores `C`.
+- **Repeats:** a repeat of the last block is ACKed and dropped.
+- **Giving up:** ten errors in a row, a block out of sequence, BREAK, or a file too big
+  for memory sends CAN x 5. CAN CAN from the sender ends it too.
+- **Timeouts:** 1 s for a byte within a block, 10 s for a block to begin.
+- **The receive path:** bytes come straight from the ring (`RX_HOLD`).
+- **The buffer** is display file 2's area, 6000h-7AFFh, 6,912 bytes. In the SCLD's
+  64-column mode, which shows that area, PicoTerm drops to 32 columns for the transfer and
+  goes back afterwards.
+
+**Saving** (`files/sdsave.asm`) does what `SAVE "f:path" CODE` does, without the ROM:
+1. `tpi:fopen path`, with op 0 and the CODE token in the first CODE number and a session
+   id in the second. If the file exists, the Pico's 88h "Replace?" is answered with
+   `pico_auto_key`, after PicoTerm has asked the user itself.
+2. SYNC, then the SAVE pre-header: 00h, 0, FFh, the session, the header's address, 17,
+   XOR. Then the pre-load.
+3. The header block (17 bytes: CODE, a 10-character stand-in name, length, 32768, 32768)
+   and the mid status.
+4. A pause of about a second.
+5. The data block and the final status, read after the card write (with up to about 25 s
+   allowed).
+
+Interrupts are off while a block goes out, as in the ROM. The file gets the firmware's
+128-byte +3DOS header, so `LOAD "f:name" CODE` loads it back on the 2068; on a PC the
+header has to be cut off.
+
+**Measured:** PicoTerm can receive about 1.5 KB/s with 128-byte blocks and 1.8 KB/s with
+1K blocks (the bit-by-bit CRC is the limit). The card's pacing is far slower: 300 baud is
+30 bytes a second, about 4 minutes for 6.9 KB, so `MODEM_BAUD` (R1) matters more than
+anything here.
+
+**To check on the card:** XMODEM over a telnet connection (`ATDT`) needs Zimodem to
+undouble IAC (FFh) both ways (Q7). If it doesn't, blocks containing FFh fail their CRC
+every time. A phonebook entry with telnet off (`ATD`) avoids the question for a raw TCP
+BBS port.
+
 ## 10. Settings file
 
 `picoterm.cfg` lives in the SD card's current folder and is written in text mode. It holds

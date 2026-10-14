@@ -17,6 +17,8 @@ menu_run:
         jr z,.wifi
         cp 'S'
         jr z,.settings
+        cp 'X'
+        jr z,.download
         cp 'C'
         jr z,.clear
         cp 'Q'
@@ -32,6 +34,9 @@ menu_run:
         jr .again
 .settings:
         call settings_run
+        jr .again
+.download:
+        call dl_run
 .again:
         call vid_redraw             ; the terminal again, under the menu
         jr .draw
@@ -62,7 +67,7 @@ menu_run:
 
 menu_draw:
         ld b,3
-        ld d,12
+        ld d,13
         ld hl,txt_picoterm
         call ui_box
         ld hl,menu_script
@@ -102,11 +107,13 @@ menu_script:
         db 8, 5, ATTR_WIN, "WiFi",0
         db 9, 2, ATTR_TITLE, "S",0
         db 9, 5, ATTR_WIN, "Settings",0
-        db 10, 2, ATTR_TITLE, "C",0
-        db 10, 5, ATTR_WIN, "Clear the screen",0
-        db 11, 2, ATTR_TITLE, "Q",0
-        db 11, 5, ATTR_WIN, "Quit to BASIC",0
-        db 13, 2, ATTR_WIN, "BREAK: back to the terminal",0
+        db 10, 2, ATTR_TITLE, "X",0
+        db 10, 5, ATTR_WIN, "Download (XMODEM)",0
+        db 11, 2, ATTR_TITLE, "C",0
+        db 11, 5, ATTR_WIN, "Clear the screen",0
+        db 12, 2, ATTR_TITLE, "Q",0
+        db 12, 5, ATTR_WIN, "Quit to BASIC",0
+        db 14, 2, ATTR_WIN, "BREAK: back to the terminal",0
         db 0FFh
 
 txt_picoterm:   db "PicoTerm",0

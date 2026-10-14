@@ -1,8 +1,9 @@
 ; main.asm - PicoTerm entry point
 ;
-; M5: a terminal on the 8251, with ANSI-BBS (default), VT52 or TTY
+; M6: a terminal on the 8251, with ANSI-BBS (default), VT52 or TTY
 ; emulation, in 32 or 64 columns, or 80 with PicoVideo (CAPS + 9 cycles).
-; BREAK opens the menu: phonebook, WiFi, settings (saved to picoterm.cfg). At start-up PicoTerm puts the card's
+; BREAK opens the menu: phonebook, WiFi, settings (saved to picoterm.cfg),
+; and XMODEM downloads to the TS-Pico's SD card. At start-up PicoTerm puts the card's
 ; modem in Hayes mode (if the ROM is the TS-Pico's), resets the 8251 and
 ; checks Zimodem answers AT. Then keys go to the modem and received bytes
 ; go to the TTY emulation. BREAK hangs up if connected and returns to BASIC.
@@ -337,6 +338,9 @@ exit:
         INCLUDE "ui/settings.asm"
         INCLUDE "ui/wifi.asm"
         INCLUDE "files/config.asm"
+        INCLUDE "files/sdsave.asm"
+        INCLUDE "xfer/xmodem.asm"
+        INCLUDE "ui/download.asm"
 
 ; --- settings (the Settings screen and picoterm.cfg come in M5) ----------
 
@@ -363,7 +367,7 @@ tt_ansi:        db 'AT&S"41=ANSI"',0
 
 ; --- text -----------------------------------------------------------------
 
-msg_banner:     db "PicoTerm M5",13,10
+msg_banner:     db "PicoTerm M6",13,10
                 db "BREAK: the menu",13,10,10,0
 msg_ready:      db "Modem ready.",13,10,0
 msg_no_tpi_modem: db "This TS-Pico has no tpi:modem.",13,10,0
@@ -400,6 +404,12 @@ wifi_ssid       equ wifi_list + WIFI_MAX*WIFI_ENTRY
 wifi_pass       equ wifi_ssid + WIFI_ENTRY
 wifi_cmd        equ wifi_pass + WIFI_PASS_MAX + 1
 wifi_line       equ wifi_cmd + 4 + WIFI_SSID_MAX + 1 + WIFI_PASS_MAX + 2
-BSS_END         equ wifi_line + 64
+BLOCK_BUF       equ wifi_line + 64                  ; one XMODEM block
+BSS_END         equ BLOCK_BUF + 1024
+
+; Downloads go to display file 2's area, free in 32 and 80 columns
+; (download.asm drops to 32 for the transfer if it's showing).
+XFER_BUF        equ DF2
+XFER_MAX        equ 6912
 
         ASSERT BSS_END <= CODE_LIMIT, "Data runs into the stack"

@@ -18,7 +18,7 @@ class StartupTest(unittest.TestCase):
         with Emulator() as emu:
             emu.wait_for_text("Sinclair")           # the 2068 has started
             emu.load(TAP)
-            emu.wait_for_shadow(sym, "PicoTerm M5")
+            emu.wait_for_shadow(sym, "PicoTerm M")
 
             # CHNG_VID moved BASIC and the ROM's stack out of DF2.
             self.assertEqual(emu.peek(0x5CC2)[0], 0x80)     # VIDMOD

@@ -270,6 +270,9 @@ class FakePico:
         self.verbose = verbose
         self.files = files if files is not None else {}   # name -> bytes
         self.channels = {}
+        self.native = None              # the arm tpi:fopen sets for a SAVE
+        self.keys_seen = []
+        self.saves = []                 # (path, data) for each SAVE written
         self.tx = deque([1])
         self.y = self.IDLE
         self.state = "idle"
@@ -302,10 +305,31 @@ class FakePico:
             self.buf.append(v)
             if len(self.buf) == 10:
                 self.prehead.append(self.buf)
-                self.need = self.buf[7] + 256 * self.buf[8] + 4
+                if self.buf[0] == 0x00:                 # a SAVE's header block
+                    self.save_pre = self.buf
+                    self.need = 21
+                    self.state = "save_header"
+                else:
+                    self.need = self.buf[7] + 256 * self.buf[8] + 4
+                    self.state = "body"
                 self.buf = []
-                self.state = "body"
                 self.y = self.MID
+        elif self.state == "save_header":
+            self.buf.append(v)
+            if len(self.buf) == self.need:
+                self.save_header(self.buf)
+        elif self.state == "save_data":
+            self.buf.append(v)
+            if len(self.buf) == self.need:
+                self.save_data(self.buf)
+        elif self.state == "prompt":
+            self.keys_seen.append(v)
+            self.tx.extend([v, 0x0D, 0x03])
+            if self.native is not None and chr(v) not in "Yy":
+                self.native["refuse"] = True
+            self.y = self.IDLE
+            self.tail = True
+            self.state = "tail"
         elif self.state == "body":
             self.buf.append(v)
             if len(self.buf) == self.need:
@@ -323,6 +347,17 @@ class FakePico:
             word = text.split(" ")[0].lower()
             if word == "tpi:modem" and self.knows_modem:
                 status, msg = 1, "Modem: " + text[10:]
+            elif word == "tpi:fopen":
+                pre = self.prehead[-1]
+                path = text.split(" ", 1)[1]
+                self.native = {"path": path, "op": pre[3], "mod": pre[4],
+                               "session": pre[5] | pre[6] << 8, "refuse": False}
+                if path in self.files:                  # 88h: Replace? (Y/N)
+                    self.tx.extend([0x88, 1, *b"Replace %s? (Y/N)" % path.encode(), 0])
+                    self.y = self.IDLE
+                    self.state = "prompt"
+                    return
+                status, msg = 1, "Saving to " + path
             elif word in ("tpi:chopen", "tpi:chwr", "tpi:chrd", "tpi:chclose"):
                 pre = self.prehead[-1]
                 if self.channel(word, text, pre[3] | pre[4] << 8, pre[5] | pre[6] << 8):
@@ -337,6 +372,61 @@ class FakePico:
             self.tx.extend([0x81, status, 0x0D, *msg.encode(), 0])
         else:
             self.tx.append(status)
+        self.y = self.IDLE
+        self.tail = True
+        self.state = "tail"
+
+    # --- SAVE: the header block, the mid status, the data block -----------
+
+    @staticmethod
+    def _xor(data):
+        x = 0
+        for b in data:
+            x ^= b
+        return x
+
+    def save_header(self, blk):
+        pre = self.save_pre
+        session = pre[3] | pre[4] << 8
+        hdr = blk[3:20]
+        ok = (blk[0] == 0 and (blk[1] | blk[2] << 8) == session
+              and self._xor([blk[0], *hdr]) == blk[20])
+        native = self.native
+        if not ok:
+            status = 2                                  # R
+        elif native is None or native["session"] != session:
+            status = 3                                  # (a TAP SAVE: not modelled)
+        elif native["refuse"]:
+            status = 9                                  # D
+        elif hdr[0] != 3 or native["mod"] != 0xAF:
+            status = 8                                  # A: only CODE modelled
+        else:
+            status = 1
+        self.tx.append(status)
+        self.y = self.MID
+        self.buf = []
+        if status != 1:
+            self.native = None
+            self.tail = True
+            self.state = "tail"
+            return
+        self.save_len = hdr[11] | hdr[12] << 8
+        self.save_start = hdr[13] | hdr[14] << 8
+        self.save_session = session
+        self.need = self.save_len + 4
+        self.state = "save_data"
+
+    def save_data(self, blk):
+        data = bytes(blk[3:-1])
+        ok = (blk[0] == 0xFF and (blk[1] | blk[2] << 8) == self.save_session
+              and self._xor([0xFF, *data]) == blk[-1])
+        if ok:
+            path = self.native["path"]
+            self.files[path] = plus3dos_code(data, self.save_start)
+            self.saves.append((path, data))
+        self.native = None
+        self.buf = []
+        self.tx.append(1 if ok else 2)
         self.y = self.IDLE
         self.tail = True
         self.state = "tail"
@@ -391,3 +481,129 @@ class FakePico:
         elif word == "tpi:chclose":
             self.channels.pop(stream, None)
         return False
+
+
+def plus3dos_code(data, start):
+    """A +3DOS file of CODE: the 128-byte header, then the data."""
+    total = 128 + len(data)
+    h = bytearray(128)
+    h[0:8] = b"PLUS3DOS"
+    h[8] = 0x1A
+    h[9], h[10] = 1, 0
+    h[11:15] = total.to_bytes(4, "little")
+    h[15] = 3
+    h[16:18] = len(data).to_bytes(2, "little")
+    h[18:20] = start.to_bytes(2, "little")
+    h[20:22] = (32768).to_bytes(2, "little")
+    h[127] = sum(h[:127]) & 0xFF
+    return bytes(h) + data
+
+
+def crc16_xmodem(data):
+    crc = 0
+    for b in data:
+        crc ^= b << 8
+        for _ in range(8):
+            crc = (crc << 1) ^ 0x1021 if crc & 0x8000 else crc << 1
+            crc &= 0xFFFF
+    return crc
+
+
+class XmodemSender:
+    """A BBS sending a file by XMODEM, once the terminal asks with C (CRC)
+    or NAK (checksum). block: 128 or 1024. Faults, each once:
+      corrupt: block numbers (1-based) sent with a damaged byte
+      cut: block numbers sent only half-way (the receiver times out)
+      repeat: block numbers sent twice (the receiver must drop the second)
+      cancel_at: send CAN CAN instead of this block
+      checksum_only: ignore C (an old sender)
+      silent: never start"""
+
+    SOH, STX, EOT, ACK, NAK, CAN = 1, 2, 4, 6, 0x15, 0x18
+
+    def __init__(self, data, block=128, corrupt=(), cut=(), repeat=(),
+                 cancel_at=None, checksum_only=False, silent=False):
+        self.data = data
+        self.size = block
+        self.blocks = [data[i:i + block].ljust(block, b"\x1a")
+                       for i in range(0, len(data), block)] or [b"\x1a" * block]
+        self.corrupt, self.cut, self.repeat = set(corrupt), set(cut), set(repeat)
+        self.cancel_at = cancel_at
+        self.checksum_only = checksum_only
+        self.silent = silent
+        self.out = deque()
+        self.closed = False
+        self.received = bytearray()
+        self.state = "wait"
+        self.crc = True
+        self.i = 0
+        self.sent_blocks = []
+        self.naks = 0
+        self.repeat_pending = False
+
+    def frame(self, i):
+        n = i + 1
+        body = self.blocks[i]
+        if self.crc:
+            c = crc16_xmodem(body)
+            check = bytes([c >> 8, c & 0xFF])
+        else:
+            check = bytes([sum(body) & 0xFF])
+        head = bytes([self.SOH if self.size == 128 else self.STX, n & 0xFF, 0xFF - (n & 0xFF)])
+        return bytearray(head + body + check)
+
+    def send_block(self):
+        n = self.i + 1
+        if self.cancel_at == n:
+            self.out.extend([self.CAN, self.CAN])
+            self.state = "cancelled"
+            return
+        f = self.frame(self.i)
+        if n in self.corrupt:
+            self.corrupt.discard(n)
+            f[3 + 5] ^= 0x40
+        if n in self.cut:
+            self.cut.discard(n)
+            f = f[:len(f) // 2]
+        self.sent_blocks.append(n)
+        self.out.extend(f)
+
+    def receive(self, b):
+        self.received.append(b)
+        if self.silent:
+            return
+        if self.state == "wait":
+            if b == ord("C") and not self.checksum_only:
+                self.crc = True
+            elif b == self.NAK:
+                self.crc = False
+            else:
+                return
+            self.state = "send"
+            self.send_block()
+        elif self.state == "send":
+            if b == self.ACK:
+                n = self.i + 1
+                if n in self.repeat and not self.repeat_pending:
+                    self.repeat.discard(n)
+                    self.repeat_pending = True
+                    self.sent_blocks.append(n)
+                    self.out.extend(self.frame(self.i))   # the same again
+                    return
+                self.repeat_pending = False
+                self.i += 1
+                if self.i == len(self.blocks):
+                    self.out.append(self.EOT)
+                    self.state = "eot"
+                else:
+                    self.send_block()
+            elif b == self.NAK:
+                self.naks += 1
+                self.send_block()
+            elif b == self.CAN:
+                self.state = "cancelled"
+        elif self.state == "eot":
+            if b == self.ACK:
+                self.state = "done"
+            elif b == self.NAK:
+                self.out.append(self.EOT)
