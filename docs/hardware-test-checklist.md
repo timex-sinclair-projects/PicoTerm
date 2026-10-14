@@ -29,11 +29,13 @@ TS-Pico v3 card.
 
 - [ ] **Build PicoTerm:** `make` and `make test` pass. Copy `build/picoterm.tap` to the SD
   card's `/TAP` folder.
-- [ ] **The card's firmware** has the 8251 emulation: steps 2 and later of the v3 modem
-  proposal. Without it, PicoTerm can only report "No modem".
-- [ ] **Hayes mode:** set the card's modem to Hayes mode in `config.ini`
-  (`MODEM_MODE=hayes`), or with `SAVE "tpi:modem hayes"`. PicoTerm also asks for it, but
-  only if the firmware has `tpi:modem`.
+- [ ] **The card's firmware** is current `main`: the 8251 emulation and the Zimodem
+  bridge merged as tspico-firmware-build #264-#273. Hayes mode was tested with a 2068 on
+  2026-10-12.
+- [ ] **Hayes mode:** nothing to do. PicoTerm sends `tpi:modem hayes` at start-up.
+  `tpi:modem` takes exactly `2050`, `hayes` or `off`, and the firmware **saves** the
+  mode in `config.ini` (`MODEM_MODE`), so it stays in Hayes mode afterwards (see 10.5).
+  Note what `MODEM_MODE` was before you start: _______
 - [ ] **Pacing:** for the first runs, leave `MODEM_BAUD` at its default (300). Section 7
   raises it.
 - [ ] **Test server:** on a computer on the same network, run
@@ -61,7 +63,8 @@ the IM2 interrupt with the card on the bus, and the 8251.
 - [ ] **2.2 Display file moved:** after quitting (section 10) check `PRINT PEEK 23746`:
   128 (VIDMOD). `PRINT PEEK 23631+256*PEEK 23632`: 31488 (CHANS at 7B00h).
 - [ ] **2.3 Start-up exchange.** The screen shows, in order:
-  - "Modem: …" from the card, if VERBOSE is on;
+  - the card's answer to `tpi:modem hayes`, if VERBOSE is on (and no "Use 2050, hayes
+    or off": that would mean an old PicoTerm that still sends `tpi:modem on`);
   - `AT`, `OK`, `ATE1V1X1Q0`, `OK`, `AT&S"41=ANSI"`, `OK`;
   - `Modem ready.`
 - [ ] **2.4 Timing:** start-up to `Modem ready.` takes about _____ s (expected 1-3 s:
@@ -71,11 +74,13 @@ the IM2 interrupt with the card on the bus, and the 8251.
 - [ ] **2.6 Typing:** type `AT` and press `ENTER`. Zimodem echoes `AT` and answers `OK`.
 - [ ] **2.7 Older firmware** (if available): with firmware that has no `tpi:modem`, you
   see "This TS-Pico has no tpi:modem." and start-up carries on.
-- [ ] **2.8 No modem:** with the modem off (`SAVE "tpi:modem off"` before loading, if
-  available) or the ESP32 unplugged: "No modem: the 8251 isn't ready." after about
-  5 s. Keys don't hang the program, and BREAK, then Q, still quits.
-- [ ] **2.9 TS2050 mode:** with `MODEM_MODE=2050`: "No answer from the modem." after
-  about 3 s, because the card hides Zimodem's replies in that mode.
+- [ ] **2.8 No modem:** with the ESP32 not answering (Zimodem not flashed, or the module
+  removed): "No modem: the 8251 isn't ready." or "No answer from the modem." after
+  about 5 s. `tpi:modem off` before loading doesn't test this: PicoTerm switches the
+  modem back to Hayes. Keys don't hang the program, and BREAK, then Q, still quits.
+- [ ] **2.9 TS2050 mode** (only with firmware that has no `tpi:modem`, if available): with
+  `MODEM_MODE=2050`, "No answer from the modem." after about 3 s. The card hides
+  Zimodem's replies in that mode, and PicoTerm can't switch it.
 - [ ] **2.10 No card:** on a 2068 without the v3 card, if one is available: "No modem",
   and **no rubbish on screen**. This checks the floating-bus (FFh) handling.
 
@@ -256,6 +261,8 @@ server's menu, then BREAK, then X, then ENTER.
   the display file a second time (VIDMOD is already 128), and works.
 - [ ] **10.4 After a quit from 64 or 80 columns,** the 2068's screen is back to normal
   (DECR mode 0).
+- [ ] **10.5 The modem stays in Hayes mode:** `config.ini` now has `MODEM_MODE=hayes`.
+  MTERM needs `SAVE "tpi:modem 2050"` first. Put back the mode you noted in section 1.
 
 ## 11. Results
 

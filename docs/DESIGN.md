@@ -320,9 +320,11 @@ size, or detect it with `6n`. Zimodem's telnet terminal type is set with
 
 ### Start-up
 
-1. If the TS-Pico ROM is 2.3 or later (`PEEK 101` >= 35), send `tpi:modem hayes` and
-   `tpi:modem on` through the TS-Pico protocol. A "C" (unknown command) answer means older
-   firmware: carry on and hope it's already in Hayes mode, and say so on the status bar.
+1. If the TS-Pico ROM is 2.3 or later (`PEEK 101` >= 35), send `tpi:modem hayes` through
+   the TS-Pico protocol. A "C" (unknown command) answer means older firmware: carry on and
+   hope it's already in Hayes mode, and say so. `tpi:modem` takes exactly `2050`, `hayes`
+   or `off` (anything else is Report A). There is no `on`: resetting the 8251 powers the
+   ESP32 up.
 2. Reset the 8251: `00 00 00 40`, mode `4F`, command `37`.
 3. Wait up to 5 s for TxRDY (the ESP32 starts up).
 4. Send `AT` CR; expect `OK` within 2 s. If there's no answer, open the terminal anyway in
@@ -605,8 +607,12 @@ timex-sinclair-projects/tspico-firmware-build#298 and #299.
   milestone M4.
 - **Q5** In Hayes mode, should the card or the program turn on Zimodem's XON/XOFF (`ATF1`),
   so the card's XOFF is obeyed?
-- **Q6** Is `tpi:modem hayes` saved, or only for the session? Should PicoTerm put the
-  previous mode back on exit?
+- **Q6** *(answered by the firmware session, 2026-10-14)*: `tpi:modem hayes` is saved, in
+  `config.ini` (`MODEM_MODE`), so Hayes mode stays after PicoTerm quits. MTERM, which
+  needs 2050 mode, then needs `SAVE "tpi:modem 2050"`. PicoTerm can't put the old mode
+  back, because no command reports it. The manual tells the user. The 8251 emulation and
+  the Zimodem bridge are on main (PRs #264-#273); Hayes mode was tested with a 2068 on
+  2026-10-12.
 - **Q7** Zimodem with `ATDT`:
   - Does it handle telnet IAC both ways in stream mode, so the link is 8-bit clean for
     XMODEM?

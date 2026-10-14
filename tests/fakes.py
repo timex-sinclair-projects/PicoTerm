@@ -271,6 +271,7 @@ class FakePico:
         self.files = files if files is not None else {}   # name -> bytes
         self.channels = {}
         self.native = None              # the arm tpi:fopen sets for a SAVE
+        self.modem_mode = "2050"        # config.ini MODEM_MODE
         self.keys_seen = []
         self.saves = []                 # (path, data) for each SAVE written
         self.tx = deque([1])
@@ -346,7 +347,13 @@ class FakePico:
             self.commands.append(text)
             word = text.split(" ")[0].lower()
             if word == "tpi:modem" and self.knows_modem:
-                status, msg = 1, "Modem: " + text[10:]
+                # tspico.py MODEM(): exactly 2050, hayes or off; saved in config.ini
+                arg = text[10:].strip().lower()
+                if arg in ("2050", "hayes", "off"):
+                    self.modem_mode = arg
+                    status, msg = 1, "Modem: " + arg
+                else:
+                    status, msg = 8, "Use 2050, hayes or off"
             elif word == "tpi:fopen":
                 pre = self.prehead[-1]
                 path = text.split(" ", 1)[1]

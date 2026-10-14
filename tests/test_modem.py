@@ -41,7 +41,8 @@ class ModemTest(unittest.TestCase):
     def test_startup_on_the_tspico(self):
         m = self.start()
         self.assertEqual(self.pico.commands,
-                         ["tpi:chopen r picoterm.cfg", "tpi:modem hayes", "tpi:modem on"])
+                         ["tpi:chopen r picoterm.cfg", "tpi:modem hayes"])
+        self.assertEqual(self.pico.modem_mode, "hayes")
         self.assertEqual(self.acia.ctrl_log[:6], RESET)
         self.assertEqual(self.zm.commands, ["AT", "ATE1V1X1Q0", 'AT&S"41=ANSI"'])
         self.assertIn("Modem ready.", text(m))

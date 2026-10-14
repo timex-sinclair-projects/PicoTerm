@@ -210,6 +210,9 @@ cursor_blink:
         jp vid_cursor_off
 
 ; modem_start: Hayes mode on the card, reset the 8251, check for Zimodem.
+; tpi:modem takes 2050, hayes or off, and the firmware saves the mode in
+; config.ini (MODEM_MODE): Hayes mode stays after PicoTerm quits. The 8251
+; reset powers the ESP32 up if it was off.
 modem_start:
         call pico_present
         jr z,.reset
@@ -218,15 +221,10 @@ modem_start:
         push af
         call term_fresh_line
         pop af
-        cp PS_OK
-        jr z,.on
+        cp PS_NONSENSE              ; "Unrecognized command": no tpi:modem
+        jr nz,.reset                ; (any other refusal printed its reason)
         ld hl,msg_no_tpi_modem
         call term_puts
-        jr .reset
-.on:
-        ld hl,cmd_modem_on
-        call pico_cmd
-        call term_fresh_line
 .reset:
         call acia_init
         ld de,5*50                  ; Zimodem takes about a second to start
@@ -376,7 +374,6 @@ msg_no_answer:  db "No answer from the modem.",13,10,0
 msg_hangup:     db 13,10,"Hanging up...",13,10,0
 bs_echo:        db 08h," ",08h,0
 cmd_modem_hayes: db "tpi:modem hayes",0
-cmd_modem_on:   db "tpi:modem on",0
 cmd_at:         db "AT",0
 
 saved_sp:       dw 0

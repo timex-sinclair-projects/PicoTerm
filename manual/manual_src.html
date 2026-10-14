@@ -152,7 +152,7 @@ details.spoiler[open] summary{margin-bottom:10px}
   <h3>What happens at start-up</h3>
   <ol>
     <li>PicoTerm reads <code>picoterm.cfg</code> from the card's current folder, if there is one, and sets up the screen in the column mode it says.</li>
-    <li>It puts the card's modem in Hayes mode and switches it on (<code>tpi:modem hayes</code>, <code>tpi:modem on</code>).</li>
+    <li>It puts the card's modem in Hayes mode (<code>tpi:modem hayes</code>).</li>
     <li>It resets the 8251 and waits up to 5&nbsp;seconds for the modem: the ESP32 takes about a second to start.</li>
     <li>It sends <code>AT</code> and waits for <code>OK</code>, then sends your init string (<code>ATE1V1X1Q0</code> unless you've changed it) and the telnet terminal type (<code>AT&amp;S"41=ANSI"</code>).</li>
     <li>It shows <code>Modem ready.</code></li>
@@ -161,6 +161,7 @@ details.spoiler[open] summary{margin-bottom:10px}
   </div>
   <figure class="shot">{{img:startup}}<figcaption>Start-up: Zimodem answers each command with OK.</figcaption></figure>
   </div>
+  <div class="note"><b>Hayes mode stays</b>The TS-Pico saves the modem's mode in its <code>config.ini</code>, so the card stays in Hayes mode after you quit PicoTerm. MTERM and other programs written for the TS2050 need the card's 2050 mode: type <kbd>SAVE "tpi:modem 2050"</kbd> before you load one.</div>
   <div class="note"><b>Memory</b>The loader does <code>CLEAR 34815</code>. PicoTerm also opens the second display file with the ROM's Video Mode Change Service, the way OS-64 does, which moves BASIC up to 7B00h. It stays open after you quit, so BASIC has about 7&nbsp;KB less room than usual until you reset.</div>
 </section>
 

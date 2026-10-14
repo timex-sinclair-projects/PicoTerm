@@ -62,8 +62,8 @@ and the factory default is off. Two possible answers:
 
 ### How PicoTerm will use it
 
-At start-up, after `tpi:modem hayes` and `tpi:modem on`, PicoTerm will send `tpi:modem
-baud 0`, or a rate from its settings. Older firmware answers "Unrecognized command" (C).
+At start-up, after `tpi:modem hayes`, PicoTerm will send `tpi:modem baud 0`, or a rate
+from its settings. Older firmware answers "Unrecognized command" (C).
 PicoTerm then carries on at the configured rate and says so, as it already does for
 `tpi:modem` itself.
 
