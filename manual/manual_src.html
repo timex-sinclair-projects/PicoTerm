@@ -391,10 +391,9 @@ phone=Test BBS|bbs.example.com:23|1|2|0|8|0</pre>
     <tr><td><code>Couldn't save the settings.</code></td><td>No TS-Pico, no SD card, or the card refused.</td><td>Check the SD card.</td></tr>
     <tr><td><code>Too big for memory (6912).</code></td><td>The download was longer than this version can hold.</td><td>See <a href="#download">section 11</a>.</td></tr>
     <tr><td><code>The sender didn't start.</code></td><td>The BBS sent nothing for about 30&nbsp;seconds.</td><td>Start the download on the BBS first, then <kbd>X</kbd>.</td></tr>
-    <tr><td><code>Too many errors. Cancelled.</code></td><td>Ten bad blocks in a row.</td><td>Try again; over a telnet connection, see the note below.</td></tr>
+    <tr><td><code>Too many errors. Cancelled.</code></td><td>Ten bad blocks in a row.</td><td>Try again. If it keeps happening, note the BBS and the file.</td></tr>
   </table></div>
   <div class="note"><b>Slow text</b>The card passes received text to the 2068 no faster than its <code>MODEM_BAUD</code> setting, which is 300 baud unless you change it: about 30 characters a second, and about 4 minutes for a 6.9&nbsp;KB download. Raise <code>MODEM_BAUD</code> in the TS-Pico's <code>config.ini</code> (to 2400, or higher). PicoTerm keeps up with far more.</div>
-  <div class="note"><b>Downloads that fail over telnet</b>Telnet doubles the byte FFh. If XMODEM fails again and again on a telnet connection (<code>ATDT</code>), try the BBS's raw port, if it has one, with a phonebook entry that has <b>Telnet</b> set to No.</div>
 </section>
 
 <section id="limits">

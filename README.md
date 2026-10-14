@@ -26,7 +26,7 @@ any size (docs/DESIGN.md, R2).
 ## Testing on hardware
 
 `docs/hardware-test-checklist.md` is the checklist for first runs on a real TS-2068 with
-the TS-Pico v3 card. It uses `tools/test_bbs.py`, a test server for a computer on the
+the TS-Pico v3 card. Results so far are in `docs/hardware-results.md`. It uses `tools/test_bbs.py`, a test server for a computer on the
 same network:
 - **2323:** a raw TCP port.
 - **2324:** a telnet port, which shows the terminal type and window size Zimodem reports.

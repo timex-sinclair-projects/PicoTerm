@@ -255,9 +255,9 @@ silence.
 - [ ] **9.6 (4) 1K blocks:** saved, 6144 bytes.
 - [ ] **9.7 (5) Checksum only:** PicoTerm falls back after three C's. Saved.
 - [ ] **9.8 (6) FFh-heavy, raw port:** saved, and the data is exact.
-- [ ] **9.9 (6) FFh-heavy, telnet port (Q7):** saved and exact? _____ If not, the errors
-  count up and it ends "Too many errors". That means Zimodem doesn't undouble IAC in
-  stream mode, so the manual's advice (use a raw port) stands.
+- [ ] **9.9 (6) FFh-heavy, telnet port (Q7):** saved and exact? _____ Board 1 (2026-10-14):
+  exact, 0 NAKs, so Zimodem undoubles IAC in stream mode. If a later Zimodem fails here,
+  the errors count up and it ends "Too many errors".
 - [ ] **9.10 Cancel:** BREAK during a transfer gives "Cancelled.", the server's log shows
   CAN x 5, and the server says "XMODEM cancelled".
 - [ ] **9.11 In 64 columns:** start in 64 columns. PicoTerm drops to 32 during the

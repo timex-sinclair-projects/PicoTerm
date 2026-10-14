@@ -579,10 +579,11 @@ header has to be cut off.
 30 bytes a second, about 4 minutes for 6.9 KB, so `MODEM_BAUD` (R1) matters more than
 anything here.
 
-**To check on the card:** XMODEM over a telnet connection (`ATDT`) needs Zimodem to
-undouble IAC (FFh) both ways (Q7). If it doesn't, blocks containing FFh fail their CRC
-every time. A phonebook entry with telnet off (`ATD`) avoids the question for a raw TCP
-BBS port.
+**Checked on the card** (board 1, 2026-10-14, `MODEM_BAUD=0`): every download saved
+exactly. That covers CRC, the largest that fits, too big, checksum only, replace, and an
+FFh-heavy file on both the raw and the telnet port. Zimodem undoubles IAC in stream mode,
+so XMODEM over `ATDT` is fine (Q7). Times: 3,000 bytes in 8.8 s, 6,912 bytes in 12.3 s,
+including the save.
 
 ## 10. Settings file
 
@@ -620,7 +621,8 @@ timex-sinclair-projects/tspico-firmware-build#298 and #299.
   2026-10-12.
 - **Q7** Zimodem with `ATDT`:
   - Does it handle telnet IAC both ways in stream mode, so the link is 8-bit clean for
-    XMODEM? *(still open: checklist 9.9)*
+    XMODEM? *Answered on hardware, 2026-10-14:* yes. An FFh-heavy XMODEM download over
+    `ATDT` arrived exact, with no NAKs.
   - Does it send NAWS (window size)? *Answered on hardware, 2026-10-14:* no. It answers
     DO NAWS with WONT, so a telnet host never learns the width. TTYPE works: it answers
     WILL, and its SB is the `AT&S"41=..."` string.

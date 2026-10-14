@@ -374,10 +374,9 @@ table.log td{height:24pt}
     <tr><td><code>Couldn't save the settings.</code></td><td>No TS-Pico or SD card, or the card refused.</td></tr>
     <tr><td><code>Too big for memory (6912).</code></td><td>The download was too long for this version.</td></tr>
     <tr><td><code>The sender didn't start.</code></td><td>Nothing from the BBS for about 30&nbsp;s. Start the download on the BBS first.</td></tr>
-    <tr><td><code>Too many errors. Cancelled.</code></td><td>Ten bad blocks in a row. Try again; see the telnet note below.</td></tr>
+    <tr><td><code>Too many errors. Cancelled.</code></td><td>Ten bad blocks in a row. Try again.</td></tr>
   </table>
   <div class="note"><b>Slow text</b>The card passes text to the 2068 no faster than its <code>MODEM_BAUD</code> setting: 300 baud unless changed, which is 30 characters a second. Raise it in the TS-Pico's <code>config.ini</code> (2400 or more); PicoTerm keeps up.</div>
-  <div class="note"><b>Downloads that fail over telnet</b>Telnet doubles the byte FFh. If XMODEM keeps failing on an <code>ATDT</code> connection, try the BBS's raw port with <b>Telnet</b> set to No.</div>
 </section>
 
 <section id="limits">
