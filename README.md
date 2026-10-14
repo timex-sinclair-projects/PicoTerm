@@ -23,6 +23,21 @@ Downloads are received into memory (at most 6,912 bytes). They're saved the way
 TS-Pico firmware has a binary-safe channel write, downloads can go straight to the card at
 any size (docs/DESIGN.md, R2).
 
+## Testing on hardware
+
+`docs/hardware-test-checklist.md` is the checklist for first runs on a real TS-2068 with
+the TS-Pico v3 card. It uses `tools/test_bbs.py`, a test server for a computer on the
+same network:
+- **2323:** a raw TCP port.
+- **2324:** a telnet port, which shows the terminal type and window size Zimodem reports.
+- **Tests:** ANSI and VT52 screens, a CP437 chart, a flood, a cursor-position query, and
+  XMODEM sends of every kind.
+- **A log** of every byte both ways, in hex.
+
+```bash
+python3 tools/test_bbs.py
+```
+
 ## Manual
 
 The user manual is in `manual/`:
