@@ -230,6 +230,15 @@ Use the test server's screens. Then try one or two real BBSes.
 On the raw port first (2323), then telnet (2324). For each, press the digit at the
 server's menu, then BREAK, then X, then ENTER.
 
+**Run this section with `MODEM_BAUD=0`** (section 7.2). At the default 300 baud a
+128-byte block takes over 4 s to reach the 2068, so the transfers take a long time:
+- 9.1, 3,000 bytes: about 2 minutes;
+- 9.4, 6,912 bytes: about 4 minutes;
+- 9.6, 6,144 bytes in 1K blocks: about 3.5 minutes.
+
+The test server waits as long as PicoTerm keeps answering, and gives up after 60 s of
+silence.
+
 - [ ] **9.1 (1) 3000 bytes, CRC:** completes with Blk 24, and you're asked about
   padding.
   - [ ] N: "Saved: 3072 bytes."

@@ -97,6 +97,9 @@ def cp437_chart():
 
 
 class Session:
+    IDLE_LIMIT = 60         # s with nothing from the receiver: give up
+    MAX_TIME = 900          # s for a whole transfer
+
     def __init__(self, reader, writer, telnet):
         self.r, self.w, self.telnet = reader, writer, telnet
         self.peer = writer.get_extra_info("peername")
@@ -204,9 +207,9 @@ class Session:
         await self.send(MENU)
         while True:
             b = await self.read()
-            c = chr(b).upper() if b < 128 else ""
-            if c in "\r\n" or not c:
-                continue
+            if b < 32 or b >= 127:
+                continue        # control bytes (a late NAK or ACK, CR) aren't commands
+            c = chr(b).upper()
             await self.send(c.encode() + b"\r\n")
             if c == "Q":
                 await self.send(b"Goodbye.\r\n")
@@ -262,16 +265,26 @@ class Session:
     async def xmodem(self, data, opts):
         await self.send(b"XMODEM: %d bytes. Start your receive (BREAK, X).\r\n" % len(data))
         sender = XmodemSender(data, **opts)
-        deadline = time.time() + 90
-        while sender.state not in ("done", "cancelled") and time.time() < deadline:
+        # Give up only when the receiver has been silent for IDLE_LIMIT: at
+        # the card's default 300 baud a block takes over 4 s to arrive, so
+        # 6912 bytes take about 4 minutes. MAX_TIME is a backstop.
+        start = last = time.time()
+        while (sender.state not in ("done", "cancelled")
+               and time.time() - last < self.IDLE_LIMIT
+               and time.time() - start < self.MAX_TIME):
             b = await self.read(1)
             if b is not None:
+                last = time.time()
+                before = len(sender.sent_blocks)
                 sender.receive(b)
+                if len(sender.sent_blocks) != before:
+                    print(f"XMODEM: block {sender.sent_blocks[-1]} sent, "
+                          f"{time.time() - start:.1f} s")
             if sender.out:
                 await self.send(bytes(sender.out))
                 sender.out.clear()
         print(f"XMODEM: {sender.state}, {len(sender.sent_blocks)} blocks sent, "
-              f"{sender.naks} NAKs")
+              f"{sender.naks} NAKs, {time.time() - start:.1f} s")
         await asyncio.sleep(1)
         await self.send(b"\r\nXMODEM %s.\r\n" % sender.state.encode())
 
