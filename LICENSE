@@ -19,10 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-One file is under a different license: src/video/cp437.asm holds the CP437
-font Bm437_ACM_VGA_8x8 from VileR's Ultimate Oldschool PC Font Pack
-(https://int10h.org/oldschool-pc-fonts/), licensed CC BY-SA 4.0
-(https://creativecommons.org/licenses/by-sa/4.0/).
