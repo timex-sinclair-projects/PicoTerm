@@ -11,6 +11,8 @@ each change removes a limit. Neither changes what existing programs see.
 
 ## R1: let a program set the modem's receive pacing (`tpi:modem baud`)
 
+Filed as timex-sinclair-projects/tspico-firmware-build#298.
+
 ### The problem
 
 The v3 modem delivers received bytes to the 2068 no faster than `MODEM_BAUD`, as the v3
@@ -78,6 +80,8 @@ These can go with the 8251 host test from the proposal's step 2:
 ---
 
 ## R2: a binary-safe channel write (`tpi:chwrb`)
+
+Filed as timex-sinclair-projects/tspico-firmware-build#299.
 
 ### The problem
 

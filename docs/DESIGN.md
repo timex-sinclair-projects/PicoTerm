@@ -587,8 +587,8 @@ PicoVideo, and an empty phonebook.
 
 ## 11. What we need from other projects
 
-R1 and R2 are written up as requests for the firmware repository in
-[firmware-requests.md](firmware-requests.md).
+R1 and R2 are written up in [firmware-requests.md](firmware-requests.md) and filed as
+timex-sinclair-projects/tspico-firmware-build#298 and #299.
 
 
 | # | From | Request | Why | Until then |
