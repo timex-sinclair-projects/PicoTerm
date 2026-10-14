@@ -587,6 +587,10 @@ PicoVideo, and an empty phonebook.
 
 ## 11. What we need from other projects
 
+R1 and R2 are written up as requests for the firmware repository in
+[firmware-requests.md](firmware-requests.md).
+
+
 | # | From | Request | Why | Until then |
 |---|---|---|---|---|
 | R1 | firmware | Set the receive pacing at run time: e.g. `tpi:modem baud <n>` (with 0 = unpaced) | 300 baud makes downloads and 80-column BBS screens slow | The user edits `MODEM_BAUD` in `config.ini` |
