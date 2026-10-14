@@ -239,8 +239,24 @@ class Session:
         elif c == "C":
             await self.send(cp437_chart())
         elif c == "F":
+            # 200 lines, then a cursor-position query: PicoTerm answers it
+            # only once it has drawn everything before it, so the time to
+            # the answer is the time to display the flood.
+            start = time.time()
             for i in range(200):
                 await self.send(b"line %03d " % i + b"x" * 40 + b"\r\n")
+            await self.send(E + b"6n")
+            reply = bytearray()
+            while not reply.endswith(b"R"):
+                b = await self.read(300)
+                if b is None:
+                    break
+                reply.append(b)
+            took = time.time() - start
+            print(f"FLOOD: 10200 bytes displayed in {took:.1f} s "
+                  f"= {10200 / took:.0f} characters a second", flush=True)
+            await self.send(b"\r\nFlood displayed in %.1f s (%d characters a second).\r\n"
+                            % (took, 10200 / took))
         elif c == "P":
             await self.send(E + b"255;255H" + E + b"6n")
             reply = bytearray()

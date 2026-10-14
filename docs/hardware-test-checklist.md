@@ -209,7 +209,12 @@ Use the test server's screens. Then try one or two real BBSes.
   - [ ] the same in 64 columns (the slowest scroll).
   - **(Q5)** If lines go missing at `0`, the card's ring overflowed. Note whether
     Zimodem had XON/XOFF on (`ATI`, or try again after typing `ATF1` before dialling).
-- [ ] **7.3 Rate:** the flood takes _____ s at `MODEM_BAUD=0` in 32 columns.
+- [ ] **7.3 Rate:** the server times the flood: after the last line it asks for the cursor
+  position, and PicoTerm answers only once everything before it is on screen. It shows
+  "Flood displayed in _ s" and logs `FLOOD: …`. At `MODEM_BAUD=0`: 32 columns _____ s,
+  64 columns _____ s, 80 columns _____ s. The host model, at 3.5 MHz with no contention, takes
+  about 35 s in 32 columns, 35 s in 64 and 19 s in 80 (290, 295 and 525 characters a
+  second). A much slower result on hardware is worth noting.
 
 ## 8. WiFi
 
