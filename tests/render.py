@@ -92,3 +92,29 @@ def save_png(machine, path, scale=2, border=16):
            + chunk(b"IEND", b""))
     with open(path, "wb") as f:
         f.write(png)
+
+
+def save_shot(machine, path):
+    """A manual screenshot: no border, square pixels as the display shows
+    them: 256 x 192 doubled to 512 x 384 in 32 columns; 512 x 192 (64) and
+    640 x 192 (80) doubled vertically only, since their dots are half as
+    wide."""
+    rows = pixels(machine)
+    sx = 2 if len(rows[0]) == 256 else 1
+    raw = bytearray()
+    for r in rows:
+        line = bytearray()
+        for px in r:
+            line += bytes(px) * sx
+        raw += (b"\x00" + line) * 2
+    w, h = len(rows[0]) * sx, len(rows) * 2
+
+    def chunk(kind, data):
+        return (struct.pack(">I", len(data)) + kind + data
+                + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF))
+
+    with open(path, "wb") as f:
+        f.write(b"\x89PNG\r\n\x1a\n"
+                + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0))
+                + chunk(b"IDAT", zlib.compress(bytes(raw), 9))
+                + chunk(b"IEND", b""))

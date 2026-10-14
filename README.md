@@ -23,6 +23,19 @@ Downloads are received into memory (at most 6,912 bytes). They're saved the way
 TS-Pico firmware has a binary-safe channel write, downloads can go straight to the card at
 any size (docs/DESIGN.md, R2).
 
+## Manual
+
+The user manual is in `manual/`:
+- `PicoTerm Manual.html`, for reading on screen;
+- `PicoTerm Manual (half-letter).pdf`;
+- `PicoTerm Manual (booklet, print duplex).pdf`.
+
+To print the booklet, use letter paper, double-sided, flipping on the short edge. Fold the
+stack and staple it on the fold.
+
+The screenshots come from `tools/manual_shots.py`, which runs PicoTerm on the host machine.
+The sources are `manual/manual_src.html` and `manual/zine_src.html`.
+
 ## Building
 
 Needs [sjasmplus](https://github.com/z00m128/sjasmplus) (1.20 or later) and Python 3.

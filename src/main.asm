@@ -367,7 +367,7 @@ tt_ansi:        db 'AT&S"41=ANSI"',0
 
 ; --- text -----------------------------------------------------------------
 
-msg_banner:     db "PicoTerm M6",13,10
+msg_banner:     db "PicoTerm 0.6",13,10
                 db "BREAK: the menu",13,10,10,0
 msg_ready:      db "Modem ready.",13,10,0
 msg_no_tpi_modem: db "This TS-Pico has no tpi:modem.",13,10,0

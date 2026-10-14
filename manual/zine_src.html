@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>PicoTerm Manual</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=block">
+<style>
+@page{size:5.5in 8.5in;margin:0.5in 0.45in 0.55in 0.45in;
+  @bottom-center{content:counter(page);font-family:"IBM Plex Mono",monospace;font-size:7.5pt;color:#565c53}}
+@page cover{margin:0;@bottom-center{content:none}}
+@page back{margin:0.45in;@bottom-center{content:none}}
+:root{--paper:#fff;--ink:#1c1f1b;--muted:#565c53;--rule:#c9ccc2;--panel:#eceee7;--accent:#1d3fb8;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;--body:"Source Serif 4",Georgia,serif;--mono:"IBM Plex Mono",Menlo,monospace}
+*{box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:9.4pt;line-height:1.42;hyphens:auto}
+p{margin:0 0 6pt;orphans:3;widows:3}
+ul,ol{margin:0 0 7pt;padding-left:1.15em}
+li{margin-bottom:2.5pt}
+h2{font-family:var(--display);font-weight:700;font-size:21pt;line-height:1;text-transform:uppercase;margin:0 0 8pt;padding-bottom:4pt;border-bottom:2pt solid var(--ink);display:flex;gap:8pt;align-items:baseline;break-after:avoid}
+h2 .n{font-family:var(--mono);font-size:8.5pt;font-weight:500;color:var(--accent)}
+h3{font-family:var(--display);font-weight:600;font-size:12.5pt;text-transform:uppercase;letter-spacing:.02em;margin:10pt 0 4pt;break-after:avoid}
+section{break-before:page}
+section.cont{break-before:auto;margin-top:16pt}
+code,.mono{font-family:var(--mono);font-size:.84em}
+code{background:var(--panel);padding:0 2.5pt;border-radius:2pt}
+kbd{font-family:var(--mono);font-size:.8em;background:#fbfbf8;border:.6pt solid #a9ada2;border-bottom-width:1.6pt;border-radius:2.5pt;padding:0 2.5pt;white-space:nowrap}
+table{border-collapse:collapse;width:100%;font-size:8.4pt;line-height:1.3;margin:2pt 0 8pt;border-top:1.2pt solid var(--ink);break-inside:auto}
+tr{break-inside:avoid}
+th,td{text-align:left;padding:3pt 5pt 3pt 0;border-bottom:.5pt solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:6.5pt;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td.num,th.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+td.k{white-space:nowrap}
+.note{background:var(--panel);padding:6pt 8pt;margin:6pt 0 8pt;font-size:8.8pt;break-inside:avoid}
+.note b:first-child{display:block;font-family:var(--mono);font-size:6.5pt;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:1pt}
+.shot{background:#000;padding:4pt;margin:4pt 0 8pt;break-inside:avoid}
+.shot img{display:block;width:100%;height:auto;image-rendering:pixelated}
+.shot figcaption{font-family:var(--mono);font-size:6.8pt;line-height:1.35;color:#c4c8bd;margin-top:3pt}
+figure{margin:0}
+.small-shot{width:72%;margin-left:auto;margin-right:auto}
+.icon{width:15pt;height:15pt;display:block;flex:none;border:.5pt solid var(--rule)}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:5pt 10pt;margin:4pt 0 8pt}
+.legend div{display:flex;gap:6pt;align-items:center;font-size:8.6pt;line-height:1.2}
+.legend small{display:block;color:var(--muted);font-size:7.4pt}
+.unitname{display:flex;gap:5pt;align-items:center;font-weight:600}
+.compass{display:grid;grid-template-columns:repeat(3,24pt);grid-template-rows:repeat(3,24pt);gap:2.5pt;flex:none}
+.compass div{display:grid;place-items:center;font-family:var(--mono);font-size:11pt;font-weight:500;background:#fbfbf8;border:.6pt solid #a9ada2;border-bottom-width:1.8pt;border-radius:3pt}
+.compass .c{background:none;border:none;font-size:6.5pt;color:var(--muted)}
+.compass-row{display:flex;gap:12pt;align-items:center;margin:4pt 0 8pt}
+.compass-row p{margin:0 0 4pt}
+
+/* cover */
+.cover{page:cover;height:8.5in;background:#0000cd;color:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column;padding:0.55in 0.45in 0.45in}
+.cover .eyebrow{font-family:var(--mono);font-size:7.5pt;letter-spacing:.14em;text-transform:uppercase;color:#cdcd00}
+.cover h1{font-family:var(--display);font-weight:700;font-size:78pt;line-height:.86;margin:6pt 0 4pt;text-transform:uppercase;letter-spacing:.01em}
+.cover .sub{font-family:var(--display);font-weight:500;font-size:17pt;text-transform:uppercase;letter-spacing:.06em;color:#cdcdcd;margin-bottom:14pt}
+.cover .lede{font-size:10.5pt;line-height:1.45;max-width:30em;margin-bottom:16pt}
+.cover .shot{margin-top:auto;border:1.5pt solid #cdcd00}
+.cover .foot{display:flex;justify-content:space-between;font-family:var(--mono);font-size:7pt;color:#cdcdcd;margin-top:8pt}
+.cover .site{font-family:var(--mono);font-size:6.5pt;letter-spacing:.1em;text-align:center;margin-top:10pt}
+.cover .site a{color:#cdcd00;text-decoration:none}
+
+/* contents */
+.toc{list-style:none;padding:0;margin:0 0 10pt;border-top:1.2pt solid var(--ink)}
+.toc li{display:flex;gap:8pt;align-items:baseline;border-bottom:.5pt solid var(--rule);padding:3.5pt 0;margin:0;font-family:var(--display);font-weight:600;font-size:12pt}
+.toc .n{font-family:var(--mono);font-size:7.5pt;color:var(--accent);min-width:14pt;font-weight:500}
+.toc .pg{margin-left:auto;font-family:var(--mono);font-size:8pt;font-weight:400;color:var(--muted)}
+
+/* back cover quick ref */
+.back{page:back;break-before:page}
+.back h2{font-size:18pt}
+.qr{display:grid;grid-template-columns:1fr 1fr;gap:0 12pt}
+.qr table{font-size:7.9pt}
+.inside{break-before:page;display:flex;flex-direction:column;height:7.4in}
+.inside .shot{margin-top:.2in}
+.credits{margin-top:auto;font-size:8.6pt;border-top:1.2pt solid var(--ink);padding-top:8pt}
+.credits .mono{font-size:7.2pt;color:var(--muted)}
+.gal{display:grid;grid-template-columns:1fr 1fr;gap:8pt}
+.gal .shot{margin:0}
+table.log td{height:24pt}
+.toc li{padding:3pt 0}
+.colophon{margin-top:10pt;font-size:7.6pt;color:var(--muted);line-height:1.4}
+
+/* optional: painted cover art instead of a screenshot. Use
+   <div class="cover art-cover"><figure class="bg">(the cover_art image token)</figure>
+   <div class="top">eyebrow, h1, .sub</div><div class="bottom">.lede, .foot, .site</div></div>
+   Art should be 11:17 portrait (the page), with dark sky at the top for the title. */
+.cover.art-cover{background:#000;padding:0}
+.cover.art-cover .bg{position:absolute;inset:0;margin:0}
+.cover.art-cover .bg img{width:100%;height:100%;object-fit:cover;display:block}
+.cover.art-cover .top{position:relative;padding:0.5in 0.45in 1.1in;background:linear-gradient(#000e 0%,#000b 55%,#0000 100%)}
+.cover.art-cover .bottom{position:relative;margin-top:auto;padding:0.9in 0.45in 0.4in;background:linear-gradient(#0000 0%,#000c 45%,#000e 100%)}
+.cover.art-cover .foot{margin-top:0}
+.cover.art-cover .lede{margin-bottom:10pt}
+/* optional: spoilers printed upside down (wrap the content, not the h2) */
+.flip{transform:rotate(180deg)}
+/* optional: a dotted page for players to draw a map on */
+.dots{height:6.3in;margin-top:6pt;background-image:radial-gradient(circle,#9aa092 0.7pt,transparent 0.8pt);background-size:0.25in 0.25in;background-position:center;border-top:1.2pt solid var(--ink)}
+</style></head><body>
+
+<div class="cover">
+  <div class="eyebrow">Timex/Sinclair 2068 · TS-Pico v3 · 2026</div>
+  <h1>Pico&shy;Term</h1>
+  <div class="sub">User manual</div>
+  <p class="lede">A terminal program for the TS-2068 and the TS-Pico v3 card. The card's WiFi modem runs Zimodem, and PicoTerm uses it to reach telnet BBSes: ANSI colour and box drawing, 32 or 64 columns (80 with PicoVideo), a phonebook, and XMODEM downloads to the SD card.</p>
+  <figure class="shot">{{img:bbs_32}}</figure>
+  <div class="foot"><span>TS-2068 + TS-Pico v3 · WiFi</span><span>Version 0.6, 2026</span></div>
+  <div class="site"><a href="https://timexsinclair.com">timexsinclair.com</a></div>
+</div>
+
+<section class="inside">
+  <figure class="shot">{{img:startup}}<figcaption>Start-up: Zimodem answers each command with OK.</figcaption></figure>
+  <div class="credits">
+    <p><strong>PicoTerm</strong> 0.6 © 2026. Written in Z80 assembly for the TS-Pico v3 card.</p>
+    <p>Built on Bo Zimmerman's Zimodem, the TS-Pico firmware and ROM, and the TS 2068 Technical Manual's Video Mode Change Service (as Zebra's OS-64 uses it). The CP437 font is PicoVideo's: Bm437_ACM_VGA_8x8 from VileR's Ultimate Oldschool PC Font Pack (int10h.org), CC BY-SA 4.0.</p>
+    <p>This manual was written from the program itself. Its screenshots come from PicoTerm's own code run on a model of the 2068 with a simulated modem and BBS, so the BBS screens are examples.</p>
+    <p class="mono">picoterm.tap: loader CLEAR 34815: LOAD "" CODE: RANDOMIZE USR 34816 · code at 8800h · 8251 $73/$77 · TS-Pico 14/15 · AY F5h/F6h</p>
+  </div>
+</section>
+
+<section id="s-contents">
+  <h2>Contents</h2>
+  <ol class="toc">
+    <li><span class="n">01</span>What you need<a class="pg" href="#need"></a></li>
+    <li><span class="n">02</span>Loading PicoTerm<a class="pg" href="#loading"></a></li>
+    <li><span class="n">03</span>Your first call<a class="pg" href="#first"></a></li>
+    <li><span class="n">04</span>The keyboard<a class="pg" href="#keys"></a></li>
+    <li><span class="n">05</span>The terminal<a class="pg" href="#terminal"></a></li>
+    <li><span class="n">06</span>32, 64 and 80 columns<a class="pg" href="#columns"></a></li>
+    <li><span class="n">07</span>The menu<a class="pg" href="#menu"></a></li>
+    <li><span class="n">08</span>The phonebook<a class="pg" href="#phonebook"></a></li>
+    <li><span class="n">09</span>WiFi<a class="pg" href="#wifi"></a></li>
+    <li><span class="n">10</span>Settings<a class="pg" href="#settings"></a></li>
+    <li><span class="n">11</span>Downloading files<a class="pg" href="#download"></a></li>
+    <li><span class="n">12</span>Messages and problems<a class="pg" href="#messages"></a></li>
+    <li><span class="n">13</span>Limits<a class="pg" href="#limits"></a></li>
+    <li><span class="n">14</span>About this edition<a class="pg" href="#about"></a></li>
+    <li><span class="n">&nbsp;</span>Your BBS list<a class="pg" href="#bbslist"></a></li>
+  </ol>
+  <div class="note"><b>Keys in this manual</b><kbd>CAPS</kbd> is CAPS SHIFT and <kbd>SYM</kbd> is SYMBOL SHIFT. <kbd>BREAK</kbd> is <kbd>CAPS</kbd>+<kbd>SPACE</kbd>; it opens PicoTerm's menu, and in any PicoTerm screen it goes back one step.</div>
+</section>
+
+<section id="need">
+  <h2><span class="n">01</span>What you need</h2>
+  <ul>
+    <li><strong>A TS-2068</strong> with the TS-Pico ROM 2.3 or later.</li>
+    <li><strong>The TS-Pico v3 card</strong>, with firmware that has the TS2050 modem emulation (the 8251 at ports <code>$73</code> and <code>$77</code>), and Zimodem on the card's ESP32. The card's modem has to be in <em>Hayes mode</em>. PicoTerm switches it there itself where the firmware allows.</li>
+    <li><strong>A WiFi network</strong> the card can join. PicoTerm can scan for one and join it (section 9).</li>
+    <li><strong>An SD card in the TS-Pico</strong>, for <code>picoterm.cfg</code> (your settings and phonebook) and for downloads.</li>
+    <li><em>Optional:</em> <strong>PicoVideo</strong>, for 80 columns and for colour in 64 columns, on its HDMI output.</li>
+  </ul>
+  <div class="note"><b>A real TS2050?</b>PicoTerm is written for the TS-Pico's modem. It doesn't pulse-dial, and it doesn't watch the TS2050's carrier line, so it won't drive an original 300-baud TS2050. Use MTERM for that.</div>
+</section>
+
+<section id="loading" class="cont">
+  <h2><span class="n">02</span>Loading PicoTerm</h2>
+  <p><code>picoterm.tap</code> holds a one-line BASIC loader and about 15&nbsp;KB of machine code, which loads at 34816 (8800h).</p>
+  <ol>
+    <li>Copy <code>picoterm.tap</code> to the SD card's <code>/TAP</code> folder.</li>
+    <li>Type <kbd>LOAD "tpi:picoterm.tap"</kbd> <kbd>ENTER</kbd> to mount it.</li>
+    <li>Type <kbd>LOAD ""</kbd> <kbd>ENTER</kbd>. The loader runs by itself.</li>
+  </ol>
+</section>
+
+<section id="startup-steps">
+  <h3>What happens at start-up</h3>
+  <ol>
+    <li>PicoTerm reads <code>picoterm.cfg</code> from the card's current folder, if there is one, and sets up the screen in its column mode.</li>
+    <li>It puts the card's modem in Hayes mode and switches it on (<code>tpi:modem hayes</code>, <code>tpi:modem on</code>).</li>
+    <li>It resets the 8251 and waits up to 5&nbsp;s for the modem: the ESP32 takes about a second to start.</li>
+    <li>It sends <code>AT</code> and waits for <code>OK</code>, then your init string (<code>ATE1V1X1Q0</code>) and the telnet terminal type (<code>AT&amp;S"41=ANSI"</code>).</li>
+    <li>It shows <code>Modem ready.</code> You see everything the modem says. If something is missing, a message says so and PicoTerm carries on (section 12).</li>
+  </ol>
+  <div class="note"><b>Memory</b>The loader does <code>CLEAR 34815</code>. PicoTerm also opens the second display file with the ROM's Video Mode Change Service, as OS-64 does, which moves BASIC up to 7B00h. It stays open after you quit, so BASIC has about 7&nbsp;KB less room until you reset.</div>
+</section>
+
+<section id="first">
+  <h2><span class="n">03</span>Your first call</h2>
+  <p>Once the modem is ready, everything you type goes to it. Zimodem echoes your typing and answers in words (<code>OK</code>, <code>CONNECT</code>, <code>NO CARRIER</code>), like a Hayes modem.</p>
+  <ol>
+    <li><strong>Join your WiFi</strong>, once: <kbd>BREAK</kbd>, then <kbd>W</kbd> (section 9).</li>
+    <li><strong>Dial a host</strong> by typing its address in quotes: <code>ATDT"bbs.example.com:23"</code> <kbd>ENTER</kbd>. The <code>T</code> asks for telnet, which most BBSes want; <code>ATD"…"</code> is a raw TCP port.</li>
+    <li>Zimodem answers <code>CONNECT</code>. From now on everything you type goes to the BBS.</li>
+    <li><strong>To hang up</strong>: <kbd>BREAK</kbd>, then <kbd>H</kbd>. If the BBS hangs up first, you see <code>NO CARRIER</code>.</li>
+  </ol>
+  <p>Put the hosts you use in the phonebook (section 8) and dial them with one key.</p>
+  <figure class="shot small-shot">{{img:connect}}<figcaption>Dialling by hand: ATDT, CONNECT, the BBS's greeting.</figcaption></figure>
+</section>
+
+<section id="keys">
+  <h2><span class="n">04</span>The keyboard</h2>
+  <p>Letters, digits and <kbd>SPACE</kbd> type as you'd expect; <kbd>CAPS</kbd> gives capitals. Every other ASCII character and control key is on a shifted key. A held key repeats after about half a second.</p>
+  <table>
+    <tr><th>Keys</th><th>Legend</th><th>Sends or does</th></tr>
+    <tr><td class="k"><kbd>CAPS</kbd>+<kbd>1</kbd></td><td>EDIT</td><td><b>Esc</b> (1Bh)</td></tr>
+    <tr><td class="k"><kbd>CAPS</kbd>+<kbd>2</kbd></td><td>CAPS LOCK</td><td>Caps lock, for letters</td></tr>
+    <tr><td class="k"><kbd>CAPS</kbd>+<kbd>3</kbd></td><td>TRUE VID</td><td><b>Tab</b> (09h)</td></tr>
+    <tr><td class="k"><kbd>CAPS</kbd>+<kbd>5</kbd>–<kbd>8</kbd></td><td>← ↓ ↑ →</td><td><b>Arrows</b>: <code>ESC [ D B A C</code> (ANSI, TTY), <code>ESC D B A C</code> (VT52). In PicoTerm's screens they move the selection.</td></tr>
+    <tr><td class="k"><kbd>CAPS</kbd>+<kbd>9</kbd></td><td>GRAPHICS</td><td><b>Next column mode</b>: 32, 64, 80</td></tr>
+    <tr><td class="k"><kbd>CAPS</kbd>+<kbd>0</kbd></td><td>DELETE</td><td><b>Backspace</b>: BS (08h) or DEL (7Fh), as set</td></tr>
+    <tr><td class="k"><kbd>BREAK</kbd></td><td>BREAK</td><td><b>The PicoTerm menu</b>; in a menu, back</td></tr>
+    <tr><td class="k"><kbd>ENTER</kbd></td><td></td><td>CR, or CR LF as set</td></tr>
+  </table>
+  <h3>Control keys</h3>
+  <p>Press <kbd>CAPS</kbd> and <kbd>SYM</kbd> together, let go, then press a letter: PicoTerm sends it as a control key. <kbd>CAPS</kbd>+<kbd>SYM</kbd>, <kbd>C</kbd> sends <b>Ctrl-C</b>. Pressing <kbd>CAPS</kbd>+<kbd>SYM</kbd> twice cancels it. It works for the letters and <kbd>[</kbd> <kbd>\</kbd> <kbd>]</kbd> <kbd>^</kbd> <kbd>_</kbd>.</p>
+</section>
+
+<section id="symbols">
+  <h3>SYMBOL SHIFT</h3>
+  <p>The red symbols work as in BASIC. The keys that type keywords give the ASCII characters the 2068 can't otherwise type:</p>
+  <table>
+    <tr><th>Key</th><th>Sends</th><th>Key</th><th>Sends</th><th>Key</th><th>Sends</th></tr>
+    <tr><td class="k"><kbd>SYM</kbd>+<kbd>A</kbd></td><td><code>~</code></td><td class="k"><kbd>SYM</kbd>+<kbd>S</kbd></td><td><code>|</code></td><td class="k"><kbd>SYM</kbd>+<kbd>D</kbd></td><td><code>\</code></td></tr>
+    <tr><td class="k"><kbd>SYM</kbd>+<kbd>F</kbd></td><td><code>{</code></td><td class="k"><kbd>SYM</kbd>+<kbd>G</kbd></td><td><code>}</code></td><td class="k"><kbd>SYM</kbd>+<kbd>H</kbd></td><td><code>^</code></td></tr>
+    <tr><td class="k"><kbd>SYM</kbd>+<kbd>Y</kbd></td><td><code>[</code></td><td class="k"><kbd>SYM</kbd>+<kbd>U</kbd></td><td><code>]</code></td><td class="k"><kbd>SYM</kbd>+<kbd>X</kbd></td><td><code>`</code> (not £)</td></tr>
+  </table>
+  <table>
+    <tr><th>Key</th><th>Sends</th><th>Key</th><th>Sends</th><th>Key</th><th>Sends</th></tr>
+    <tr><td class="k"><kbd>SYM</kbd>+<kbd>Z</kbd></td><td><code>:</code></td><td class="k"><kbd>SYM</kbd>+<kbd>C</kbd></td><td><code>?</code></td><td class="k"><kbd>SYM</kbd>+<kbd>V</kbd></td><td><code>/</code></td></tr>
+    <tr><td class="k"><kbd>SYM</kbd>+<kbd>R</kbd></td><td><code>&lt;</code></td><td class="k"><kbd>SYM</kbd>+<kbd>T</kbd></td><td><code>&gt;</code></td><td class="k"><kbd>SYM</kbd>+<kbd>O</kbd></td><td><code>;</code></td></tr>
+    <tr><td class="k"><kbd>SYM</kbd>+<kbd>P</kbd></td><td><code>"</code></td><td class="k"><kbd>SYM</kbd>+<kbd>J</kbd></td><td><code>-</code></td><td class="k"><kbd>SYM</kbd>+<kbd>K</kbd></td><td><code>+</code></td></tr>
+    <tr><td class="k"><kbd>SYM</kbd>+<kbd>L</kbd></td><td><code>=</code></td><td class="k"><kbd>SYM</kbd>+<kbd>B</kbd></td><td><code>*</code></td><td class="k"><kbd>SYM</kbd>+<kbd>N</kbd></td><td><code>,</code></td></tr>
+    <tr><td class="k"><kbd>SYM</kbd>+<kbd>M</kbd></td><td><code>.</code></td><td class="k" colspan="4"><kbd>SYM</kbd>+<kbd>1</kbd>…<kbd>0</kbd>: <code>! @ # $ % &amp; ' ( ) _</code></td></tr>
+  </table>
+  <p><kbd>SYM</kbd> with <kbd>Q</kbd>, <kbd>W</kbd>, <kbd>E</kbd> or <kbd>I</kbd> (≤ ≠ ≥ AT) sends nothing.</p>
+</section>
+
+<section id="terminal">
+  <h2><span class="n">05</span>The terminal</h2>
+  <p>PicoTerm has three emulations. It uses ANSI unless you choose otherwise in Settings or in a phonebook entry, and it tells Zimodem which one to report to telnet hosts.</p>
+  <table>
+    <tr><th>Emulation</th><th>What it understands</th></tr>
+    <tr><td><b>ANSI</b></td><td>For BBSes: a VT100 subset with colour, as BBS software expects of "ANSI-BBS".
+      <ul>
+        <li>Cursor moves, positioning, save and restore.</li>
+        <li>Erasing; inserting and deleting lines and characters.</li>
+        <li>A scrolling region.</li>
+        <li>Colours with bold, blink and reverse.</li>
+        <li>It answers the cursor-position question, which BBSes use to find the screen size, and identifies itself as a VT100.</li>
+      </ul></td></tr>
+    <tr><td><b>VT52</b></td><td>The standard set: cursor moves, home, <code>ESC Y</code> addressing, erasing, reverse line feed, identify.</td></tr>
+    <tr><td><b>TTY</b></td><td>Text and control codes only; escape sequences show as text.</td></tr>
+  </table>
+  <p>In every emulation PicoTerm handles <b>BEL</b>, a short tone on the AY; <b>BS</b>; <b>Tab</b>, every 8 columns; <b>LF</b>; <b>CR</b>; and <b>FF</b>, which clears the screen. Text wraps as on a VT100: a character in the last column leaves the cursor there, and the next starts a new line.</p>
+  <h3>Colour and characters</h3>
+  <p>ANSI's eight colours become the 2068's. <b>Bold</b> is BRIGHT, <b>blink</b> is FLASH (or not, in Settings), and <b>reverse</b> swaps ink and paper. BRIGHT lights the whole cell, so bold text on a coloured background brightens the background too.</p>
+  <p>PicoTerm uses the PC's CP437 characters, as PicoVideo does for 80 columns, so box lines, shading and accented letters look as BBS authors meant.</p>
+</section>
+
+<section id="columns">
+  <h2><span class="n">06</span>32, 64 and 80 columns</h2>
+  <p><kbd>CAPS</kbd>+<kbd>9</kbd> changes mode, keeping what's on screen. Settings <kbd>C</kbd> picks the mode PicoTerm starts in.</p>
+  <table>
+    <tr><th>Mode</th><th>Needs</th><th>Colour</th></tr>
+    <tr><td><b>32</b></td><td>any 2068</td><td>Per character. Readable on any TV.</td></tr>
+    <tr><td><b>64</b></td><td>any 2068</td><td>One ink and paper (Settings <kbd>I</kbd>); per character with PicoVideo.</td></tr>
+    <tr><td><b>80</b></td><td>PicoVideo</td><td>Per character, on HDMI. The 2068's own video shows nothing useful. Turn on <b>PicoVideo</b> in Settings.</td></tr>
+  </table>
+  <div class="gal">
+    <figure class="shot">{{img:bbs_64}}<figcaption>64 columns, stock 2068.</figcaption></figure>
+    <figure class="shot">{{img:bbs_64_picovideo}}<figcaption>64 with PicoVideo.</figcaption></figure>
+  </div>
+  <figure class="shot small-shot">{{img:bbs_80}}<figcaption>80 columns, PicoVideo's text mode.</figcaption></figure>
+  <p>The screen is 24 rows. A line scrolls in about 40&nbsp;ms in 32 and 80 columns and 100&nbsp;ms in 64: fast enough for 2400 baud.</p>
+</section>
+
+<section id="menu">
+  <h2><span class="n">07</span>The menu</h2>
+  <p>Press <kbd>BREAK</kbd> at any time. The menu's top line says whether you're online, and the emulation and columns in use.</p>
+  <table>
+    <tr><th>Key</th><th>Does</th></tr>
+    <tr><td class="k"><kbd>D</kbd></td><td>The phonebook: dial, add, edit, delete</td></tr>
+    <tr><td class="k"><kbd>H</kbd></td><td>Hang up</td></tr>
+    <tr><td class="k"><kbd>W</kbd></td><td>WiFi: scan, join, save</td></tr>
+    <tr><td class="k"><kbd>S</kbd></td><td>Settings</td></tr>
+    <tr><td class="k"><kbd>X</kbd></td><td>Download a file (XMODEM)</td></tr>
+    <tr><td class="k"><kbd>C</kbd></td><td>Clear the screen</td></tr>
+    <tr><td class="k"><kbd>Q</kbd></td><td>Quit to BASIC; hangs up first if online</td></tr>
+    <tr><td class="k"><kbd>BREAK</kbd></td><td>Back to the terminal</td></tr>
+  </table>
+  <p>Text from the BBS waits while a menu is open, and appears when you return.</p>
+  <figure class="shot small-shot">{{img:menu}}<figcaption>The menu.</figcaption></figure>
+</section>
+
+<section id="phonebook">
+  <h2><span class="n">08</span>The phonebook</h2>
+  <p>20 hosts. Move with <kbd>CAPS</kbd>+<kbd>6</kbd> and <kbd>CAPS</kbd>+<kbd>7</kbd>.</p>
+  <table>
+    <tr><th>Key</th><th>Does</th></tr>
+    <tr><td class="k"><kbd>ENTER</kbd></td><td><b>Dial</b>: applies the entry's settings, goes back to the terminal, sends <code>ATDT"host:port"</code> (<code>ATD</code> with telnet off).</td></tr>
+    <tr><td class="k"><kbd>N</kbd></td><td><b>New</b>: the name, <kbd>ENTER</kbd>, the host, <kbd>ENTER</kbd>, then <kbd>ENTER</kbd> to save. It starts with your current settings.</td></tr>
+    <tr><td class="k"><kbd>E</kbd> / <kbd>X</kbd></td><td><b>Edit</b> / <b>delete</b> (<kbd>Y</kbd> confirms).</td></tr>
+  </table>
+  <figure class="shot small-shot">{{img:phonebook}}<figcaption>The phonebook.</figcaption></figure>
+  <div class="note"><b>Remember to save</b>Entries live in memory until you save your settings (Settings <kbd>S</kbd>). Dialling while online is refused: “Hang up first.”</div>
+</section>
+
+<section id="entry">
+  <h3>An entry</h3>
+  <table>
+    <tr><th>Key</th><th>Field</th><th>Notes</th></tr>
+    <tr><td class="k"><kbd>N</kbd></td><td>Name</td><td>Up to 16 characters</td></tr>
+    <tr><td class="k"><kbd>H</kbd></td><td>Host:port</td><td>Up to 40, e.g. <code>bbs.example.com:23</code></td></tr>
+    <tr><td class="k"><kbd>T</kbd></td><td>Telnet</td><td>Yes: <code>ATDT</code>. No: <code>ATD</code>, raw TCP</td></tr>
+    <tr><td class="k"><kbd>E</kbd></td><td>Emulation</td><td>ANSI, VT52, TTY</td></tr>
+    <tr><td class="k"><kbd>C</kbd></td><td>Columns</td><td>32, 64, 80 (64 without PicoVideo)</td></tr>
+    <tr><td class="k"><kbd>B</kbd></td><td>Backspace</td><td>BS or DEL, as the host wants</td></tr>
+    <tr><td class="k"><kbd>L</kbd></td><td>Local echo</td><td>For hosts that don't echo</td></tr>
+  </table>
+  <p><kbd>ENTER</kbd> saves the entry; <kbd>BREAK</kbd> drops the changes. In a text field <kbd>DELETE</kbd> rubs out and <kbd>ENTER</kbd> accepts.</p>
+  <figure class="shot small-shot">{{img:entry}}<figcaption>Editing an entry.</figcaption></figure>
+</section>
+
+<section id="wifi">
+  <h2><span class="n">09</span>WiFi</h2>
+  <p><kbd>BREAK</kbd>, then <kbd>W</kbd>, while offline. Zimodem scans (<code>ATW</code>) and PicoTerm lists up to 16 networks.</p>
+  <ol>
+    <li>Choose one with the arrows and press <kbd>ENTER</kbd>, or <kbd>M</kbd> to type a name that isn't listed. <kbd>R</kbd> scans again.</li>
+    <li>Type the password (it shows as stars) and press <kbd>ENTER</kbd>. PicoTerm sends <code>ATW"name,password"</code> and waits up to 20&nbsp;s.</li>
+    <li>If it worked, <kbd>Y</kbd> makes it the default (<code>AT&amp;W</code>): Zimodem joins it by itself from then on.</li>
+  </ol>
+  <figure class="shot small-shot">{{img:wifi}}<figcaption>The networks Zimodem can see.</figcaption></figure>
+  <div class="note"><b>Commas and quotes</b>Zimodem's <code>ATW"name,password"</code> can't carry a comma or a <code>"</code> in either part.</div>
+</section>
+
+<section id="settings">
+  <h2><span class="n">10</span>Settings</h2>
+  <p><kbd>BREAK</kbd>, then <kbd>S</kbd>. Each key changes one setting at once.</p>
+  <table>
+    <tr><th>Key</th><th>Setting</th><th>Default</th></tr>
+    <tr><td class="k"><kbd>E</kbd></td><td>Emulation</td><td>ANSI</td></tr>
+    <tr><td class="k"><kbd>C</kbd></td><td>Columns at start-up</td><td>32</td></tr>
+    <tr><td class="k"><kbd>P</kbd></td><td>PicoVideo fitted</td><td>No</td></tr>
+    <tr><td class="k"><kbd>I</kbd></td><td>64-column ink</td><td>White</td></tr>
+    <tr><td class="k"><kbd>B</kbd></td><td>Backspace: BS or DEL</td><td>BS</td></tr>
+    <tr><td class="k"><kbd>L</kbd></td><td>Local echo</td><td>No</td></tr>
+    <tr><td class="k"><kbd>N</kbd></td><td>ENTER sends CR or CR LF</td><td>CR</td></tr>
+    <tr><td class="k"><kbd>F</kbd></td><td>Blink shows as FLASH</td><td>Yes</td></tr>
+    <tr><td class="k"><kbd>G</kbd></td><td>Bell</td><td>Yes</td></tr>
+    <tr><td class="k"><kbd>M</kbd></td><td>Modem init string</td><td><code>ATE1V1X1Q0</code></td></tr>
+    <tr><td class="k"><kbd>S</kbd></td><td><b>Save</b> settings and phonebook</td><td></td></tr>
+  </table>
+  <h3>picoterm.cfg</h3>
+  <p><kbd>S</kbd> writes <code>picoterm.cfg</code> in the SD card's current folder; PicoTerm reads it at start-up. It's plain text: <code>emul=2</code> (0 TTY, 1 VT52, 2 ANSI), <code>cols=1</code> (0 is 32, 1 is 64, 2 is 80), <code>picovideo</code>, <code>ink64</code>, <code>bs</code> (8 or 127), <code>echo</code>, <code>enter</code>, <code>blink</code>, <code>bell</code>, <code>init</code>, and a line per phonebook entry:</p>
+  <p><code>phone=Test BBS|bbs.example.com:23|1|2|0|8|0</code></p>
+  <p>That's the name, host, telnet, emulation, columns, backspace and echo. Lines PicoTerm doesn't understand are skipped.</p>
+</section>
+
+<section id="download">
+  <h2><span class="n">11</span>Downloading files</h2>
+  <p>PicoTerm receives with <b>XMODEM</b>, CRC or 1K, with checksums for older senders. The file goes to the TS-Pico's SD card.</p>
+  <ol>
+    <li>On the BBS, choose the file and XMODEM.</li>
+    <li><kbd>BREAK</kbd>, <kbd>X</kbd>, and a name for the file (<code>download.bin</code>). PicoTerm asks before replacing a file.</li>
+    <li>The window counts blocks, bytes and errors. Damaged blocks are asked for again.</li>
+    <li><b>Strip ^Z padding?</b> XMODEM pads the last block with 1Ah. <kbd>Y</kbd> for text; <kbd>N</kbd> for programs and binaries.</li>
+    <li>PicoTerm saves the file and shows its size.</li>
+  </ol>
+  <p><kbd>BREAK</kbd> cancels and tells the BBS. In stock 64-column mode, PicoTerm uses 32 columns during the transfer: the file is held in the 64-column screen's memory.</p>
+  <figure class="shot small-shot">{{img:download_progress}}<figcaption>Receiving.</figcaption></figure>
+  <div class="note"><b>In this version</b>Downloads are received into memory first: at most <b>6,912 bytes</b>. The file is saved as <code>SAVE "f:name" CODE</code> saves it, so it starts with a 128-byte +3DOS header. <code>LOAD "f:name" CODE</code> loads it back; on a PC, cut the first 128 bytes. A planned TS-Pico firmware addition should lift both limits.</div>
+</section>
+
+<section id="messages">
+  <h2><span class="n">12</span>Messages and problems</h2>
+  <table>
+    <tr><th>You see</th><th>It means, and what to do</th></tr>
+    <tr><td><code>Modem ready.</code></td><td>Zimodem answered. Type or dial.</td></tr>
+    <tr><td><code>This TS-Pico has no tpi:modem.</code></td><td>Older card firmware. Set the card's modem to Hayes mode yourself (see the TS-Pico manual), or update.</td></tr>
+    <tr><td><code>No modem: the 8251 isn't ready.</code></td><td>Nothing at <code>$73</code>/<code>$77</code> within 5&nbsp;s: no v3 card, the modem off, or no modem firmware. PicoTerm runs; modem keys are dropped.</td></tr>
+    <tr><td><code>No answer from the modem.</code></td><td>No <code>OK</code> in 3&nbsp;s. Check the modem is in <b>Hayes</b> mode (TS2050 mode hides Zimodem's replies), then type <code>AT</code> <kbd>ENTER</kbd>.</td></tr>
+    <tr><td><code>NO ANSWER</code>, <code>ERROR</code></td><td>Zimodem couldn't connect, or didn't understand: check the host, port, quotes and WiFi (<code>ATI</code> shows Zimodem's state).</td></tr>
+    <tr><td><code>NO CARRIER</code></td><td>The host hung up.</td></tr>
+    <tr><td><code>Hang up first.</code></td><td>Dialling or WiFi while online: <kbd>BREAK</kbd>, <kbd>H</kbd>.</td></tr>
+    <tr><td><code>Couldn't save the settings.</code></td><td>No TS-Pico or SD card, or the card refused.</td></tr>
+    <tr><td><code>Too big for memory (6912).</code></td><td>The download was too long for this version.</td></tr>
+    <tr><td><code>The sender didn't start.</code></td><td>Nothing from the BBS for about 30&nbsp;s. Start the download on the BBS first.</td></tr>
+    <tr><td><code>Too many errors. Cancelled.</code></td><td>Ten bad blocks in a row. Try again; see the telnet note below.</td></tr>
+  </table>
+  <div class="note"><b>Slow text</b>The card passes text to the 2068 no faster than its <code>MODEM_BAUD</code> setting: 300 baud unless changed, which is 30 characters a second. Raise it in the TS-Pico's <code>config.ini</code> (2400 or more); PicoTerm keeps up.</div>
+  <div class="note"><b>Downloads that fail over telnet</b>Telnet doubles the byte FFh. If XMODEM keeps failing on an <code>ATDT</code> connection, try the BBS's raw port with <b>Telnet</b> set to No.</div>
+</section>
+
+<section id="limits">
+  <h2><span class="n">13</span>Limits</h2>
+  <ul>
+    <li><b>Downloads only, and at most 6,912 bytes</b>: no upload, YMODEM or ZMODEM, and no capture to a file.</li>
+    <li><b>No scrollback.</b> Text that scrolls off the top is gone.</li>
+    <li><b>24 rows.</b> BBSes that assume 25 lose the bottom line.</li>
+    <li><b>Colour:</b> no bright background on its own; 64 columns on a stock 2068 has one colour pair.</li>
+    <li><b>Keyboard:</b> the symbol keys follow the Spectrum's legends, which the 2068 mostly shares; the tables in section 4 are what PicoTerm does.</li>
+    <li><b>Screen width:</b> PicoTerm can't tell a telnet host your width itself. Most BBSes ask, or measure it with the cursor-position question, which PicoTerm answers.</li>
+    <li><b>The modem:</b> the TS-Pico's, in Hayes mode, with its 8251 emulation. Not a stock TS2050.</li>
+  </ul>
+</section>
+
+<section id="about" class="cont">
+  <h2><span class="n">14</span>About this edition</h2>
+  <p>PicoTerm 0.6, 2026, for the TS-Pico v3 card, in Z80 assembly (sjasmplus). This manual was written from the program itself; the BBS screens are examples from a simulated BBS, not real systems. Credits are inside the front cover.</p>
+</section>
+
+<section id="bbslist">
+  <h2>Your BBS list</h2>
+  <table class="log">
+    <tr><th>Name</th><th>Host:port</th><th>Telnet</th><th>Cols</th><th>Notes</th></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td></td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr>
+  </table>
+</section>
+
+<div class="back" id="back">
+  <h2>Quick reference</h2>
+  <div class="qr">
+    <table>
+      <tr><th>Key</th><th>In the terminal</th></tr>
+      <tr><td class="k"><kbd>BREAK</kbd></td><td>Menu</td></tr>
+      <tr><td class="k"><kbd>CAPS</kbd>+<kbd>1</kbd></td><td>Esc</td></tr>
+      <tr><td class="k"><kbd>CAPS</kbd>+<kbd>2</kbd></td><td>Caps lock</td></tr>
+      <tr><td class="k"><kbd>CAPS</kbd>+<kbd>3</kbd></td><td>Tab</td></tr>
+      <tr><td class="k"><kbd>CAPS</kbd>+<kbd>5</kbd>–<kbd>8</kbd></td><td>Arrows</td></tr>
+      <tr><td class="k"><kbd>CAPS</kbd>+<kbd>9</kbd></td><td>32 / 64 / 80</td></tr>
+      <tr><td class="k"><kbd>CAPS</kbd>+<kbd>0</kbd></td><td>Backspace</td></tr>
+      <tr><td class="k"><kbd>CAPS</kbd>+<kbd>SYM</kbd>, key</td><td>Ctrl-key</td></tr>
+      <tr><td class="k"><kbd>SYM</kbd>+<kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></td><td><code>~ | \</code></td></tr>
+      <tr><td class="k"><kbd>SYM</kbd>+<kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd></td><td><code>{ } ^</code></td></tr>
+      <tr><td class="k"><kbd>SYM</kbd>+<kbd>Y</kbd> <kbd>U</kbd> <kbd>X</kbd></td><td><code>[ ] `</code></td></tr>
+    </table>
+    <table>
+      <tr><th>Key</th><th>In the menu</th></tr>
+      <tr><td class="k"><kbd>D</kbd></td><td>Phonebook</td></tr>
+      <tr><td class="k"><kbd>H</kbd></td><td>Hang up</td></tr>
+      <tr><td class="k"><kbd>W</kbd></td><td>WiFi</td></tr>
+      <tr><td class="k"><kbd>S</kbd></td><td>Settings (<kbd>S</kbd> saves)</td></tr>
+      <tr><td class="k"><kbd>X</kbd></td><td>XMODEM download</td></tr>
+      <tr><td class="k"><kbd>C</kbd></td><td>Clear the screen</td></tr>
+      <tr><td class="k"><kbd>Q</kbd></td><td>Quit to BASIC</td></tr>
+      <tr><td class="k"><kbd>BREAK</kbd></td><td>Back</td></tr>
+    </table>
+  </div>
+  <h3>Dialling by hand</h3>
+  <p><code>ATDT"host:port"</code> telnet · <code>ATD"host:port"</code> raw · <code>ATI</code> status · <code>ATW</code> scan WiFi</p>
+  <p class="colophon">PicoTerm 0.6 © 2026 · for the TS-2068 and TS-Pico v3 · timexsinclair.com</p>
+</div>
+</body></html>
