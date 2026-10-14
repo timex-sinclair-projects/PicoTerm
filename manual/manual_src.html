@@ -153,8 +153,8 @@ details.spoiler[open] summary{margin-bottom:10px}
   <ol>
     <li>PicoTerm reads <code>picoterm.cfg</code> from the card's current folder, if there is one, and sets up the screen in the column mode it says.</li>
     <li>It puts the card's modem in Hayes mode (<code>tpi:modem hayes</code>).</li>
-    <li>It resets the 8251 and waits up to 5&nbsp;seconds for the modem: the ESP32 takes about a second to start.</li>
-    <li>It sends <code>AT</code> and waits for <code>OK</code>, then sends your init string (<code>ATE1V1X1Q0</code> unless you've changed it) and the telnet terminal type (<code>AT&amp;S"41=ANSI"</code>).</li>
+    <li>It resets the 8251, which starts the card's ESP32.</li>
+    <li>It sends <code>AT</code> once a second until Zimodem answers <code>OK</code>, for up to about 12&nbsp;seconds: Zimodem takes a few seconds to start, longer while it joins WiFi, and you may see its banner first. Then it sends your init string (<code>ATE1V1X1Q0</code> unless you've changed it) and the telnet terminal type (<code>AT&amp;S"41=ANSI"</code>).</li>
     <li>It shows <code>Modem ready.</code></li>
   </ol>
   <p>You see everything the modem says, as it says it. If something is missing, a message says so and PicoTerm carries on: <a href="#messages">section 12</a> explains each one.</p>
@@ -384,7 +384,7 @@ phone=Test BBS|bbs.example.com:23|1|2|0|8|0</pre>
     <tr><td><code>Modem ready.</code></td><td>Zimodem answered <code>AT</code>, and the init string and terminal type were sent.</td><td>Type or dial.</td></tr>
     <tr><td><code>This TS-Pico has no tpi:modem.</code></td><td>The card's firmware is older than PicoTerm expects. PicoTerm carries on anyway.</td><td>Set the card's modem to Hayes mode yourself (the TS-Pico manual explains how), or update the firmware.</td></tr>
     <tr><td><code>No modem: the 8251 isn't ready.</code></td><td>Nothing answered at ports <code>$73</code>/<code>$77</code> within 5&nbsp;seconds: no v3 card, the modem off, or firmware without the modem.</td><td>Check the card and its firmware. PicoTerm still runs; keys that would go to the modem are dropped.</td></tr>
-    <tr><td><code>No answer from the modem.</code></td><td>The 8251 is there, but Zimodem didn't reply <code>OK</code> within 3&nbsp;seconds.</td><td>Make sure the card's modem is in <b>Hayes</b> mode; in TS2050 mode it hides Zimodem's replies. Type <code>AT</code> <kbd>ENTER</kbd> to try again.</td></tr>
+    <tr><td><code>No answer from the modem.</code></td><td>The 8251 is there, but Zimodem didn't reply <code>OK</code> within about 12&nbsp;seconds.</td><td>Make sure the card's modem is in <b>Hayes</b> mode; in TS2050 mode it hides Zimodem's replies. Type <code>AT</code> <kbd>ENTER</kbd> to try again.</td></tr>
     <tr><td><code>NO ANSWER</code>, <code>ERROR</code></td><td>Zimodem couldn't connect, or didn't understand.</td><td>Check the host, port and quotes; check that WiFi is joined (<code>ATI</code> shows Zimodem's state).</td></tr>
     <tr><td><code>NO CARRIER</code></td><td>The host closed the connection.</td><td>Dial again.</td></tr>
     <tr><td><code>Hang up first.</code></td><td>Dialling or WiFi while you're connected.</td><td><kbd>BREAK</kbd>, <kbd>H</kbd>.</td></tr>

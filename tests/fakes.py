@@ -136,7 +136,13 @@ class FakeZimodem:
     """Enough of Zimodem: AT commands with echo and verbose results, ATDT to
     a host table, stream mode, the +++ escape with guard times, ATH."""
 
-    def __init__(self, hosts=None, networks=None):
+    BANNER = b"\r\nZimodem Firmware v4.0.3\r\nREADY.\r\n"
+
+    def __init__(self, hosts=None, networks=None, deaf_frames=0):
+        """deaf_frames: until this frame the line isn't up (the card holds
+        the ESP32's line down while Zimodem boots: board_v3 modem_service);
+        bytes sent before then are lost. Then Zimodem's banner arrives."""
+        self.deaf_frames = deaf_frames
         self.hosts = hosts if hosts is not None else {"bbs.example:23": EchoBBS}
         # WiFi networks in range: ssid -> (rssi, password or None if open)
         self.networks = networks if networks is not None else {
@@ -144,6 +150,7 @@ class FakeZimodem:
             "Neighbour": (-80, "x")}
         self.joined = None
         self.saved = False
+        self.lost = bytearray()
         self.to_terminal = deque()
         self.mode = "cmd"
         self.echo = True
@@ -163,6 +170,9 @@ class FakeZimodem:
         self.send(b"\r\n" + word + b"\r\n")
 
     def from_terminal(self, b, frame):
+        if frame < self.deaf_frames:
+            self.lost.append(b)
+            return
         if self.mode == "cmd":
             if self.echo:
                 self.send(bytes([b]))
@@ -186,6 +196,8 @@ class FakeZimodem:
 
     def tick(self, frame):
         self.frame = frame
+        if self.deaf_frames and frame == self.deaf_frames:
+            self.send(self.BANNER)
         if self.mode == "stream":
             if self.plus == 3 and frame - self.plus_frame > GUARD_FRAMES:
                 self.plus = 0

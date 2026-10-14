@@ -87,6 +87,31 @@ class ModemTest(unittest.TestCase):
         self.assertLess(m.frame - before, 100)
         self.assertTrue(m.quit())
 
+    def slow_zimodem(self, deaf_frames, frames):
+        self.zm = FakeZimodem(deaf_frames=deaf_frames)
+        self.acia = Fake8251(self.zm)
+        self.pico = FakePico()
+        self.m = Machine(acia=self.acia, pico=self.pico)
+        self.m.run_frames(frames)
+        return self.m
+
+    def test_zimodem_slower_than_the_line(self):
+        # Hardware, 2026-10-14: the card lets bytes through 2 s after the
+        # first 8251 write, and Zimodem (joining WiFi) can take longer.
+        # PicoTerm keeps asking, once a second, for about 12 s.
+        for seconds in (2.5, 5, 10):
+            m = self.slow_zimodem(int(seconds * 50), 800)
+            self.assertIn("Modem ready.", text(m), f"Zimodem ready after {seconds} s")
+            self.assertIn(b"AT\r", bytes(self.zm.lost))     # the early tries were lost
+            self.assertIn("ATE1V1X1Q0", self.zm.commands)
+
+    def test_zimodem_never_answers(self):
+        m = self.slow_zimodem(10 ** 6, 900)
+        self.assertIn("No answer from the modem.", text(m))
+        tries = bytes(self.zm.lost).count(b"AT\r")
+        self.assertGreaterEqual(tries, 11)
+        self.assertLessEqual(tries, 13)
+
     def test_no_card_floating_bus(self):
         m = self.start(floating=True, frames=400)
         self.assertIn("No modem", text(m))
@@ -109,7 +134,7 @@ class ModemTest(unittest.TestCase):
         self.zm.process = lambda text: None          # deaf
         self.acia = Fake8251(self.zm)
         m = self.m = Machine(acia=self.acia, pico=FakePico())
-        m.run_frames(400)
+        m.run_frames(900)                            # 12 tries, about 14 s
         self.assertIn("No answer from the modem.", text(m))
 
     # --- the terminal --------------------------------------------------------

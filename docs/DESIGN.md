@@ -326,8 +326,13 @@ size, or detect it with `6n`. Zimodem's telnet terminal type is set with
    or `off` (anything else is Report A). There is no `on`: resetting the 8251 powers the
    ESP32 up.
 2. Reset the 8251: `00 00 00 40`, mode `4F`, command `37`.
-3. Wait up to 5 s for TxRDY (the ESP32 starts up).
-4. Send `AT` CR; expect `OK` within 2 s. If there's no answer, open the terminal anyway in
+3. Wait up to 5 s for TxRDY. On the card, TxRDY comes at once: the card holds what's sent
+   in its own buffer.
+4. Send `AT` CR and wait 1 s for `OK`; try 12 times (about 12 s). The card lets bytes
+   through to Zimodem only 2 s after the first 8251 write (`board_v3` `modem_service`,
+   `MODEM_BOOT_MS`). Zimodem can take longer than that to start, especially while it
+   joins WiFi, and anything sent before it's listening is lost. Found on hardware,
+   2026-10-14: a single `AT` with a 3 s wait gave "No answer", then Zimodem's banner. If there's no answer, open the terminal anyway in
    "no modem" state, so the user can still type.
 5. Send the init string (a setting): by default `ATE1V1X1Q0` and `AT&S"41=ANSI"`. Echo stays
    on so the user can type AT commands themselves.
@@ -615,8 +620,10 @@ timex-sinclair-projects/tspico-firmware-build#298 and #299.
   2026-10-12.
 - **Q7** Zimodem with `ATDT`:
   - Does it handle telnet IAC both ways in stream mode, so the link is 8-bit clean for
-    XMODEM?
-  - Does it send NAWS (window size)?
+    XMODEM? *(still open: checklist 9.9)*
+  - Does it send NAWS (window size)? *Answered on hardware, 2026-10-14:* no. It answers
+    DO NAWS with WONT, so a telnet host never learns the width. TTYPE works: it answers
+    WILL, and its SB is the `AT&S"41=..."` string.
 
 ## 12. Testing
 

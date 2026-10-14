@@ -41,6 +41,10 @@ TS-Pico v3 card.
 - [ ] **Test server:** on a computer on the same network, run
   `python3 tools/test_bbs.py`. It listens on **2323 (raw TCP)** and **2324 (telnet)**,
   and logs every byte both ways in hex. Note the computer's IP address: _______________
+  - **The port decides** whether the server speaks raw TCP or telnet, whatever you dial
+    it with. `ATD` or `ATDT` only changes what Zimodem does. So use `ATD` with 2323 and
+    `ATDT` with 2324: dialling 2323 with `ATDT` (or 2324 with `ATD`) gives confusing
+    results.
 - [ ] **Phonebook:** for the later sections, have a `picoterm.cfg` on the SD card with two
   entries for the server:
 
@@ -67,8 +71,10 @@ the IM2 interrupt with the card on the bus, and the 8251.
     or off": that would mean an old PicoTerm that still sends `tpi:modem on`);
   - `AT`, `OK`, `ATE1V1X1Q0`, `OK`, `AT&S"41=ANSI"`, `OK`;
   - `Modem ready.`
-- [ ] **2.4 Timing:** start-up to `Modem ready.` takes about _____ s (expected 1-3 s:
-  the ESP32 boots).
+- [ ] **2.4 Timing:** start-up to `Modem ready.` takes about _____ s (expected 2-5 s,
+  longer while Zimodem joins WiFi). PicoTerm sends `AT` once a second for about 12 s: the
+  card only connects Zimodem 2 s after the first 8251 write, and earlier `AT`s are lost.
+  You may see Zimodem's banner before the `AT` that gets an `OK`.
 - [ ] **2.5 The cursor** is an underline that blinks about once a second, and shows
   steadily while you type.
 - [ ] **2.6 Typing:** type `AT` and press `ENTER`. Zimodem echoes `AT` and answers `OK`.
@@ -110,7 +116,8 @@ twice. Then type into the terminal with no connection.
 ## 4. A call, raw and telnet
 
 - [ ] **4.1 WiFi** (if Zimodem isn't on your network yet): section 8 first.
-- [ ] **4.2 Raw call by hand:** type `ATD"<ip>:2323"` and press ENTER. You get `CONNECT …`
+- [ ] **4.2 Raw call by hand:** type `ATD"<ip>:2323"` (`ATD` with the raw port) and press
+  ENTER. You get `CONNECT …`
   and the server's welcome and menu. The server's log shows the connection.
 - [ ] **4.3 Echo:** press E, type a line, press ENTER. It comes back once, not twice.
   Type `.` and ENTER to leave.
@@ -121,13 +128,15 @@ twice. Then type into the terminal with no connection.
   PicoTerm's menu (BREAK) says "Offline".
 - [ ] **4.7 Local hang-up:** reconnect, then BREAK, then H. About a second of silence,
   `+++` in the server's log, another second, then `OK`, then `ATH` and `OK`. The server
-  sees the connection close.
+  sees the connection close. The `+++` reaches the host as data before Zimodem acts on it:
+  the test server redraws its menu once for each `+`. That's normal Hayes behaviour.
   - **(timing)** If Zimodem misses the escape, note whether the machine is 50 or 60 Hz:
     the guard is 66 ticks.
-- [ ] **4.8 Telnet call:** type `ATDT"<ip>:2324"` and press ENTER, then press T at the
-  menu.
+- [ ] **4.8 Telnet call:** type `ATDT"<ip>:2324"` (`ATDT` with the telnet port) and press
+  ENTER, then press T at the menu.
   - [ ] **Terminal type** shown: _______ (expected `ANSI`; this checks `AT&S"41=ANSI"`).
-  - [ ] **(Q7) Window size** shown: _______ (`None` means Zimodem doesn't send NAWS).
+  - [ ] **(Q7) Window size** shown: _______. `None` means Zimodem doesn't send NAWS: board
+    1, 2026-10-14, answered DO NAWS with WONT.
 - [ ] **4.9 Quit while online:** BREAK, then Q, hangs up first (as 4.7), then returns
   to BASIC with `0 OK`.
 

@@ -165,8 +165,8 @@ table.log td{height:24pt}
   <ol>
     <li>PicoTerm reads <code>picoterm.cfg</code> from the card's current folder, if there is one, and sets up the screen in its column mode.</li>
     <li>It puts the card's modem in Hayes mode (<code>tpi:modem hayes</code>).</li>
-    <li>It resets the 8251 and waits up to 5&nbsp;s for the modem: the ESP32 takes about a second to start.</li>
-    <li>It sends <code>AT</code> and waits for <code>OK</code>, then your init string (<code>ATE1V1X1Q0</code>) and the telnet terminal type (<code>AT&amp;S"41=ANSI"</code>).</li>
+    <li>It resets the 8251, which starts the card's ESP32.</li>
+    <li>It sends <code>AT</code> once a second until Zimodem answers <code>OK</code> (up to about 12&nbsp;s; Zimodem's banner may show first), then your init string (<code>ATE1V1X1Q0</code>) and the telnet terminal type (<code>AT&amp;S"41=ANSI"</code>).</li>
     <li>It shows <code>Modem ready.</code> You see everything the modem says. If something is missing, a message says so and PicoTerm carries on (section 12).</li>
   </ol>
   <div class="note"><b>Hayes mode stays</b>The TS-Pico saves the modem's mode in <code>config.ini</code>, so the card stays in Hayes mode after you quit. Before loading MTERM or another TS2050 program, type <kbd>SAVE "tpi:modem 2050"</kbd>.</div>
@@ -367,7 +367,7 @@ table.log td{height:24pt}
     <tr><td><code>Modem ready.</code></td><td>Zimodem answered. Type or dial.</td></tr>
     <tr><td><code>This TS-Pico has no tpi:modem.</code></td><td>Older card firmware. Set the card's modem to Hayes mode yourself (see the TS-Pico manual), or update.</td></tr>
     <tr><td><code>No modem: the 8251 isn't ready.</code></td><td>Nothing at <code>$73</code>/<code>$77</code> within 5&nbsp;s: no v3 card, the modem off, or no modem firmware. PicoTerm runs; modem keys are dropped.</td></tr>
-    <tr><td><code>No answer from the modem.</code></td><td>No <code>OK</code> in 3&nbsp;s. Check the modem is in <b>Hayes</b> mode (TS2050 mode hides Zimodem's replies), then type <code>AT</code> <kbd>ENTER</kbd>.</td></tr>
+    <tr><td><code>No answer from the modem.</code></td><td>No <code>OK</code> in about 12&nbsp;s. Check the modem is in <b>Hayes</b> mode (TS2050 mode hides Zimodem's replies), then type <code>AT</code> <kbd>ENTER</kbd>.</td></tr>
     <tr><td><code>NO ANSWER</code>, <code>ERROR</code></td><td>Zimodem couldn't connect, or didn't understand: check the host, port, quotes and WiFi (<code>ATI</code> shows Zimodem's state).</td></tr>
     <tr><td><code>NO CARRIER</code></td><td>The host hung up.</td></tr>
     <tr><td><code>Hang up first.</code></td><td>Dialling or WiFi while online: <kbd>BREAK</kbd>, <kbd>H</kbd>.</td></tr>

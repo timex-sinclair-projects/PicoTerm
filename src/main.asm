@@ -233,11 +233,20 @@ modem_start:
         ld hl,msg_no_8251
         jp term_puts
 .ready:
+        ; TxRDY comes at once, but the card only lets bytes through to
+        ; Zimodem 2 s after the first 8251 write, and Zimodem can take
+        ; longer than that to start (joining WiFi): anything sent sooner is
+        ; lost. So ask again, once a second, for about 12 s.
+        ld b,AT_TRIES
+.try:
+        push bc
         ld hl,cmd_at
-        ld de,3*50
+        ld de,AT_WAIT
         call hayes_command
+        pop bc
         cp HR_OK
         jr z,.init
+        djnz .try
         ld hl,msg_no_answer
         jp term_puts
 .init:
@@ -375,6 +384,8 @@ msg_hangup:     db 13,10,"Hanging up...",13,10,0
 bs_echo:        db 08h," ",08h,0
 cmd_modem_hayes: db "tpi:modem hayes",0
 cmd_at:         db "AT",0
+AT_TRIES        equ 12
+AT_WAIT         equ 60              ; ticks: 1 s at 60 Hz, 1.2 s at 50 Hz
 
 saved_sp:       dw 0
 saved_hl2:      dw 0
