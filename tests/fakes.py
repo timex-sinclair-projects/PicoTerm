@@ -247,7 +247,7 @@ class FakeZimodem:
                 rest = rest[2:]
                 continue
             if c == "D":
-                m = re.match(r'D[TX]?"([^"]+)"', rest, re.I)
+                m = re.match(r'D[TPX]*"([^"]+)"', rest, re.I)       # modifiers: T telnet, X XON/XOFF
                 if not m:
                     self.result(b"ERROR")
                     return

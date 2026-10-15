@@ -489,7 +489,8 @@ pb_dial:
         inc hl
         ld a,(hl)
         ld (set_echo),a
-        ld de,dial_buf              ; ATDT"host" or ATD"host"
+        ld de,dial_buf              ; ATDT"host" or ATD"host", X after
+                                    ; ATD(T) with flow control on
         ld hl,txt_atd
         call str_copy
         ld hl,(pb_dial_entry)
@@ -502,6 +503,16 @@ pb_dial:
         ld (de),a
         inc de
 .raw:
+        ; X: Zimodem obeys the card's XOFF/XON only on a connection dialled
+        ; with it (its own flag; ATF1 isn't enough), and passes them to the
+        ; host otherwise (firmware #301)
+        ld a,(flow_on)
+        or a
+        jr z,.quote
+        ld a,'X'
+        ld (de),a
+        inc de
+.quote:
         ld a,'"'
         ld (de),a
         inc de
@@ -568,7 +579,7 @@ pb_edit_entry:  dw 0
 pb_dial_entry:  dw 0
 pb_dial_cols:   db 0
 pb_work:        ds PB_SIZE
-dial_buf:       ds 4+1+PB_HOST_MAX+2
+dial_buf:       ds 5+1+PB_HOST_MAX+2
 
 txt_phonebook:  db "Phonebook",0
 txt_pb_entry:   db "Entry",0

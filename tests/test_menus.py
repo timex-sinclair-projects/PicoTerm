@@ -197,7 +197,7 @@ class MenuTest(unittest.TestCase):
         self.assertIn("Test BBS", self.screen())
         self.key("ENTER")                              # dial it
         m.run_until(lambda: m.var("hayes_online") == 1, limit=300)
-        self.assertEqual(self.zm.commands[-1], 'ATDT"bbs.example:23"')
+        self.assertEqual(self.zm.commands[-1], 'ATDTX"bbs.example:23"')   # X: flow control
         self.assertIn('AT&S"41=ANSI"', self.zm.commands[-2])
         m.run_frames(20)
         m.idle()
@@ -235,7 +235,7 @@ class MenuTest(unittest.TestCase):
         self.key("ENTER")
         self.key("ENTER")                              # dial
         m.run_until(lambda: m.var("hayes_online") == 1, limit=300)
-        self.assertEqual(self.zm.commands[-1], 'ATD"bbs.example:23"')
+        self.assertEqual(self.zm.commands[-1], 'ATDX"bbs.example:23"')
         self.assertEqual(self.setting("set_emul"), EMU_TTY)
         self.assertEqual(self.setting("set_backspace"), 0x7F)
         self.assertEqual(m.cols(), 64)

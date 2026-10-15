@@ -284,9 +284,11 @@ modem_start:
 ; flow_start: XON/XOFF between the card and Zimodem (firmware #301), so a
 ; fast host can't overflow the card's 4 KB ring when the screen falls
 ; behind. Zimodem first (ATF1), then the card (tpi:modem flow on); a card
-; without it refuses, and Zimodem then only eats 11h/13h typed here, which
-; Ctrl-Q/Ctrl-S do anyway. An XMODEM upload, when there is one, has to turn
-; both off first: Zimodem would eat those bytes in the data (DESIGN.md).
+; without it refuses, and flow_on stays 0. Zimodem obeys XOFF only on a
+; connection dialled with X, so the phonebook adds it while flow_on is set;
+; a dial typed by hand needs ATDTX. On such a connection Zimodem eats every
+; 11h/13h sent from here, so an XMODEM upload, when there is one, has to
+; turn flow control off first (DESIGN.md).
 flow_start:
         ld a,(modem_hayes_ok)
         cp PS_OK
