@@ -185,7 +185,12 @@ Makefile
   and the card XOFFs Zimodem. But the card only sends XOFF in 2050 mode. In Hayes mode
   it leaves Zimodem's settings alone, so at `MODEM_BAUD=0` a fast host overflows the
   card's ring and data is lost (Q5).
-  (In Hayes mode, who turns on Zimodem's XON/XOFF is open question Q5.)
+  **Fixed:** firmware #301 adds `tpi:modem flow on`. At start-up PicoTerm sends Zimodem
+  `ATF1`, then `tpi:modem flow on`, in that order: with Zimodem's flow control off, the
+  card's XOFF and XON would reach the host as data. A card that refuses it is left alone.
+  On quit, `tpi:modem flow off` (Zimodem keeps F1 until reset). With F1, Zimodem eats every
+  11h and 13h the 2068 sends (`zstream.ino`), so Ctrl-Q/Ctrl-S typed in the terminal pause
+  and resume Zimodem's output, and an upload must turn both off first (below).
 - During long operations (SD writes, full-screen redraws) the ISR keeps receiving, so nothing
   waits on the main loop.
 
@@ -545,7 +550,9 @@ default. At that rate a 1 KB block takes 34 s, so useful downloads need a higher
 
 Later: YMODEM batch (it carries the name and the exact size, so there's no padding), XMODEM
 upload, and capturing a session to a file. Uploads have a catch: with Zimodem's XON/XOFF on,
-11h and 13h in the data would be swallowed, so a transfer has to turn flow control off first.
+11h and 13h in the data would be swallowed, so a transfer has to turn flow control off first:
+`+++`, `ATF4`, `ATO`, `tpi:modem flow off`; afterwards `+++`, `ATF1`, `ATO`,
+`tpi:modem flow on` (about 2-3 s of guard time each way).
 Zimodem's `AT&G` (fetch a file over HTTP) is another way to get files that may be worth a
 look.
 
@@ -620,8 +627,10 @@ timex-sinclair-projects/tspico-firmware-build#298 and #299.
 - **Q1** PicoVideo detection (R3).
 - **Q2** Receive pacing (R1). What rate the 64-column scroll can keep up with is measured in
   milestone M4.
-- **Q5** In Hayes mode, should the card or the program turn on Zimodem's XON/XOFF (`ATF1`),
-  so the card's XOFF is obeyed?
+- **Q5** *(answered, firmware #301)*: the program. It sends `ATF1`, then
+  `tpi:modem flow on`; the card then XOFFs Zimodem at 3/4 of its 4 KB ring and XONs below
+  1/4. Not saved, and any `tpi:modem` mode change turns it off. 2050 mode's own `F1` has
+  the upload problem too: firmware #302.
 - **Q6** *(answered by the firmware session, 2026-10-14)*: `tpi:modem hayes` is saved, in
   `config.ini` (`MODEM_MODE`), so Hayes mode stays after PicoTerm quits. MTERM, which
   needs 2050 mode, then needs `SAVE "tpi:modem 2050"`. PicoTerm can't put the old mode

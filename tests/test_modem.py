@@ -41,12 +41,32 @@ class ModemTest(unittest.TestCase):
     def test_startup_on_the_tspico(self):
         m = self.start()
         self.assertEqual(self.pico.commands,
-                         ["tpi:chopen r picoterm.cfg", "tpi:modem hayes"])
+                         ["tpi:chopen r picoterm.cfg", "tpi:modem hayes", "tpi:modem flow on"])
         self.assertEqual(self.pico.modem_mode, "hayes")
+        self.assertTrue(self.pico.flow)
         self.assertEqual(self.acia.ctrl_log[:6], RESET)
-        self.assertEqual(self.zm.commands, ["AT", "ATE1V1X1Q0", 'AT&S"41=ANSI"'])
+        self.assertEqual(self.zm.commands, ["AT", "ATE1V1X1Q0", 'AT&S"41=ANSI"', "ATF1"])
         self.assertIn("Modem ready.", text(m))
         self.assert_screen_is_shadow()
+
+    def test_flow_control_zimodem_first(self):
+        # Zimodem's ATF1 before the card's XOFF can reach it: with F0 Zimodem
+        # would pass the card's XOFF and XON on to the host as data.
+        self.start()
+        self.assertEqual(self.zm.commands[-1], "ATF1")
+        self.assertEqual(self.pico.commands[-1], "tpi:modem flow on")
+
+    def test_firmware_without_flow(self):
+        # A card from before firmware #301 refuses flow on: Modem ready. still
+        # gets a line of its own.
+        self.zm = FakeZimodem()
+        self.acia = Fake8251(self.zm)
+        self.pico = FakePico(knows_flow=False, verbose=True)
+        m = self.m = Machine(acia=self.acia, pico=self.pico)
+        m.run_frames(200)
+        self.assertEqual(self.pico.commands[-1], "tpi:modem flow on")
+        self.assertFalse(self.pico.flow)
+        self.assertIn("\nModem ready.", text(m))
 
     def test_pico_preheader_carries_rom_version(self):
         self.start()
@@ -69,6 +89,7 @@ class ModemTest(unittest.TestCase):
         m = self.m = Machine(acia=self.acia, pico=self.pico)
         m.run_frames(200)
         self.assertEqual(self.pico.commands, ["tpi:chopen r picoterm.cfg", "tpi:modem hayes"])
+        self.assertNotIn("ATF1", self.zm.commands)          # no flow control asked for
         self.assertIn("Unrecognized command", text(m))
         self.assertIn("This TS-Pico has no tpi:modem.", text(m))
         self.assertIn("Modem ready.", text(m))
@@ -117,7 +138,7 @@ class ModemTest(unittest.TestCase):
         self.assertIn("Modem ready.", t)
         self.assertGreater(self.zm.commands.count("AT"), 1)    # several got through
         self.assertEqual(t.count("\nAT\n"), 1)                 # one shown
-        self.assertEqual(t.count("OK"), 3)                     # AT, init, termtype
+        self.assertEqual(t.count("OK"), 4)                     # AT, init, termtype, ATF1
         cmds = self.zm.commands
         self.assertEqual(cmds[cmds.index("ATE1V1X1Q0") - 1], "AT")
 
@@ -214,6 +235,8 @@ class ModemTest(unittest.TestCase):
         m = self.start()
         self.assertTrue(m.quit(limit=20))
         self.assertEqual(self.zm.escapes, 0)
+        self.assertEqual(self.pico.commands[-1], "tpi:modem flow off")   # the card's side
+        self.assertFalse(self.pico.flow)
 
     # --- receiving -----------------------------------------------------------
 

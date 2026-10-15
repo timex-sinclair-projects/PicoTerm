@@ -282,8 +282,10 @@ class FakePico:
 
     IDLE, MID = 0xFF, 0xF7
 
-    def __init__(self, knows_modem=True, verbose=False, files=None):
+    def __init__(self, knows_modem=True, knows_flow=True, verbose=False, files=None):
         self.knows_modem = knows_modem
+        self.knows_flow = knows_flow    # tpi:modem flow on/off (firmware #301)
+        self.flow = False
         self.verbose = verbose
         self.files = files if files is not None else {}   # name -> bytes
         self.channels = {}
@@ -364,11 +366,18 @@ class FakePico:
             self.commands.append(text)
             word = text.split(" ")[0].lower()
             if word == "tpi:modem" and self.knows_modem:
-                # tspico.py MODEM(): exactly 2050, hayes or off; saved in config.ini
+                # tspico.py MODEM(): 2050, hayes or off, saved in config.ini
+                # and turning flow off; flow on/off, not saved
                 arg = text[10:].strip().lower()
                 if arg in ("2050", "hayes", "off"):
                     self.modem_mode = arg
+                    self.flow = False
+                    status, msg = 1, "Modem: %s mode" % arg
+                elif arg in ("flow on", "flow off") and self.knows_flow:
+                    self.flow = arg == "flow on"
                     status, msg = 1, "Modem: " + arg
+                elif self.knows_flow:
+                    status, msg = 8, "2050, hayes, off or flow on/off"
                 else:
                     status, msg = 8, "Use 2050, hayes or off"
             elif word == "tpi:fopen":

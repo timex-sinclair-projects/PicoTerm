@@ -207,8 +207,11 @@ Use the test server's screens. Then try one or two real BBSes.
   read) and restart the card. Run the flood again:
   - [ ] all 200 lines arrive, numbered 000-199, none missing or doubled, in 32 columns;
   - [ ] the same in 64 columns (the slowest scroll).
-  - **(Q5)** If lines go missing at `0`, the card's ring overflowed. Note whether
-    Zimodem had XON/XOFF on (`ATI`, or try again after typing `ATF1` before dialling).
+  - **(Q5)** Needs firmware with `tpi:modem flow` (#301): PicoTerm turns it on at
+    start-up. `SAVE "tpi:modem"` after quitting says `Flow off` (quit turns it off); during
+    the run, `tsbus.stats()`'s `m_rx_lost` should stay 0 and `m_xoff` shows the card
+    pausing Zimodem. Without #301, lines go missing at `0` in 64 columns (board 1,
+    2026-10-14: 9,798 bytes lost).
 - [ ] **7.3 Rate:** the server times the flood: after the last line it asks for the cursor
   position, and PicoTerm answers only once everything before it is on screen. It shows
   "Flood displayed in _ s" and logs `FLOOD: …`. At `MODEM_BAUD=0`: 32 columns _____ s,
@@ -303,7 +306,7 @@ silence.
 | 10 BASIC | | |
 
 **Open questions answered:**
-- **Q5:** flood at `MODEM_BAUD=0` without `ATF1`: __________
+- **Q5:** flood at `MODEM_BAUD=0` with flow control (#301), 64 columns: __________
 - **Q7:** NAWS __________; telnet FFh in XMODEM __________
 - **Key legends that differ:** __________
 
