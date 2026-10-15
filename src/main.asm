@@ -229,6 +229,7 @@ modem_start:
         jr z,.reset
         ld hl,cmd_modem_hayes
         call pico_cmd
+        ld (modem_hayes_ok),a       ; PS_OK: the card has tpi:modem
         push af
         call term_fresh_line
         pop af
@@ -276,8 +277,47 @@ modem_start:
         ld de,3*50
         call hayes_command
         call send_termtype
+        call flow_start
         ld hl,msg_ready
         jp term_puts
+
+; flow_start: XON/XOFF between the card and Zimodem (firmware #301), so a
+; fast host can't overflow the card's 4 KB ring when the screen falls
+; behind. Zimodem first (ATF1), then the card (tpi:modem flow on); a card
+; without it refuses, and flow_on stays 0. Zimodem obeys XOFF only on a
+; connection dialled with X, so the phonebook adds it while flow_on is set;
+; a dial typed by hand needs ATDTX. On such a connection Zimodem eats every
+; 11h/13h sent from here, so an XMODEM upload, when there is one, has to
+; turn flow control off first (DESIGN.md).
+flow_start:
+        ld a,(modem_hayes_ok)
+        cp PS_OK
+        ret nz
+        ld hl,cmd_atf1
+        ld de,3*50
+        call hayes_command
+        cp HR_OK
+        ret nz
+        ld hl,cmd_flow_on
+        call pico_cmd
+        cp PS_OK
+        jr nz,.refused
+        ld (flow_on),a
+        ret
+.refused:
+        jp term_fresh_line          ; after its reason, if it gave one
+
+; flow_stop: the card's side off again, so a program run after PicoTerm
+; that resets Zimodem (ATZ) doesn't get the card's XOFF and XON sent on to
+; its host as data. Zimodem keeps F1 until then.
+flow_stop:
+        ld a,(flow_on)
+        or a
+        ret z
+        xor a
+        ld (flow_on),a
+        ld hl,cmd_flow_off
+        jp pico_cmd
 
 ; send_termtype: tell Zimodem the terminal type to give telnet hosts.
 send_termtype:
@@ -322,6 +362,7 @@ exit:
         and 1Fh
         jr nz,.released
         call acia_off
+        call flow_stop
         call vid_cursor_off
         ld a,VM_32                  ; the standard screen for BASIC (no redraw:
         call vid_select             ; it's cleared just below)
@@ -406,11 +447,16 @@ msg_hangup:     db 13,10,"Hanging up...",13,10,0
 bs_echo:        db 08h," ",08h,0
 cmd_modem_hayes: db "tpi:modem hayes",0
 cmd_at:         db "AT",0
+cmd_atf1:       db "ATF1",0
+cmd_flow_on:    db "tpi:modem flow on",0
+cmd_flow_off:   db "tpi:modem flow off",0
 AT_TRIES        equ 12
 AT_WAIT         equ 60              ; ticks: 1 s at 60 Hz, 1.2 s at 50 Hz
 AT_DRAIN        equ 30              ; ticks: half a second
 
 pump_last:      db 0                ; the last byte pump_rx took
+modem_hayes_ok: db 0                ; PS_OK once tpi:modem hayes has worked
+flow_on:        db 0                ; 1 = the card's flow control is on
 saved_sp:       dw 0
 saved_hl2:      dw 0
 blink_base:     dw 0
