@@ -282,7 +282,7 @@ modem_start:
         jp term_puts
 
 ; flow_start: XON/XOFF between the card and Zimodem (firmware #301), so a
-; fast host can't overflow the card's 4 KB ring when the screen falls
+; fast host can't overflow the card's ring (16 KB) when the screen falls
 ; behind. Zimodem first (ATF1), then the card (tpi:modem flow on); a card
 ; without it refuses, and flow_on stays 0. Zimodem obeys XOFF only on a
 ; connection dialled with X, so the phonebook adds it while flow_on is set;

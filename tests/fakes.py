@@ -19,11 +19,24 @@ class Fake8251:
     starting). cps: received characters per second, None = unpaced.
     never_ready: TxRDY never comes (no modem at all).
     floating: no 8251 at all: every read is FFh, writes go nowhere.
+
+    The card's line ring (line.to_terminal) holds RING_SIZE bytes; what
+    Zimodem sends beyond that is lost and counted in rx_lost, as the card's
+    m_rx_lost. With flow control on (tpi:modem flow on, read from the
+    FakePico in self.pico), the card sends XOFF at half full and XON below a
+    quarter (firmware #301/#303), into the same serial line as the 2068.
     """
 
+    RING_SIZE = 16384
+
     def __init__(self, line, boot_frames=0, cps=None, never_ready=False,
-                 floating=False):
+                 floating=False, ring_size=RING_SIZE):
         self.floating = floating
+        self.ring_size = ring_size
+        self.rx_lost = 0
+        self.xoff_sent = False
+        self.xoffs = 0
+        self.pico = None
         self.line = line
         self.boot_frames = boot_frames
         self.cps = cps
@@ -45,6 +58,19 @@ class Fake8251:
         if self.cps:
             self.budget = min(self.budget + self.cps / FPS, 2.0)
         self.line.tick(self.frame)
+        ring = self.line.to_terminal
+        while len(ring) > self.ring_size:           # the DMA laps the ring
+            ring.pop()
+            self.rx_lost += 1
+        flow = self.pico is not None and getattr(self.pico, "flow", False)
+        level = len(ring)
+        if flow and not self.xoff_sent and level >= self.ring_size // 2:
+            self.xoff_sent = True
+            self.xoffs += 1
+            self.line.from_terminal(0x13, self.frame)
+        elif self.xoff_sent and (level < self.ring_size // 4 or not flow):
+            self.xoff_sent = False
+            self.line.from_terminal(0x11, self.frame)
 
     # --- the ports ---------------------------------------------------------
 
@@ -127,6 +153,9 @@ class EchoBBS:
             elif word == b"flood":
                 for i in range(100):
                     self.out.extend(b"line %02d " % i + b"x" * 30 + b"\r\n")
+            elif word == b"bigflood":           # 600 x 51 bytes: 30.6 KB at once
+                for i in range(600):
+                    self.out.extend(b"line %03d " % i + b"x" * 40 + b"\r\n")
             self.line = b""
         else:
             self.line += bytes([b])
@@ -143,6 +172,10 @@ class FakeZimodem:
         the ESP32's line down while Zimodem boots: board_v3 modem_service);
         bytes sent before then are lost. Then Zimodem's banner arrives."""
         self.deaf_frames = deaf_frames
+        self.f1 = False                     # ATF1: XON/XOFF on the serial side
+        self.conn_x = False                 # the call was dialled with X
+        self.paused = False
+        self.overshoot = 0
         self.queue_early = queue_early      # the card holds bytes until line-up
         self.early = bytearray()
         self.hosts = hosts if hosts is not None else {"bbs.example:23": EchoBBS}
@@ -171,7 +204,16 @@ class FakeZimodem:
     def result(self, word):
         self.send(b"\r\n" + word + b"\r\n")
 
+    UART_PER_FRAME = 230                    # 115200 baud, 8N1, 50 frames a second
+    SERIAL_BUFFER = 4096                    # still sent after an XOFF
+
     def from_terminal(self, b, frame):
+        if (self.mode == "stream" and self.f1 and self.conn_x
+                and b in (0x11, 0x13)):     # flow control, not data
+            self.paused = b == 0x13
+            if self.paused:
+                self.overshoot = self.SERIAL_BUFFER
+            return
         if frame < self.deaf_frames:
             (self.early if self.queue_early else self.lost).append(b)
             return
@@ -211,8 +253,14 @@ class FakeZimodem:
                 self.result(b"OK")
                 return
             if self.remote is not None:
-                while self.remote.out:
+                budget = self.UART_PER_FRAME
+                while self.remote.out and budget:
+                    if self.paused:
+                        if self.overshoot <= 0:
+                            break
+                        self.overshoot -= 1
                     self.to_terminal.append(self.remote.out.popleft())
+                    budget -= 1
                 if self.remote.closed:
                     self.remote = None
                     self.mode = "cmd"
@@ -247,11 +295,13 @@ class FakeZimodem:
                 rest = rest[2:]
                 continue
             if c == "D":
-                m = re.match(r'D[TPX]*"([^"]+)"', rest, re.I)       # modifiers: T telnet, X XON/XOFF
+                m = re.match(r'D([TPX]*)"([^"]+)"', rest, re.I)     # modifiers: T telnet, X XON/XOFF
                 if not m:
                     self.result(b"ERROR")
                     return
-                host = m.group(1)
+                host = m.group(2)
+                self.conn_x = "X" in m.group(1).upper()
+                self.paused = False
                 if host in self.hosts:
                     self.remote = self.hosts[host]()
                     self.mode = "stream"
@@ -268,6 +318,8 @@ class FakeZimodem:
                 letter, digit = m.group(1).upper(), m.group(2)
                 if letter == "E":
                     self.echo = digit != "0"
+                elif letter == "F":
+                    self.f1 = digit == "1"
                 elif letter == "H":
                     self.remote = None
                 elif letter == "I":

@@ -42,9 +42,12 @@ TS-Pico v3 card.
   `python3 tools/test_bbs.py`. It listens on **2323 (raw TCP)** and **2324 (telnet)**,
   and logs every byte both ways in hex. Note the computer's IP address: _______________
   - **The port decides** whether the server speaks raw TCP or telnet, whatever you dial
-    it with. `ATD` or `ATDT` only changes what Zimodem does. So use `ATD` with 2323 and
-    `ATDT` with 2324: dialling 2323 with `ATDT` (or 2324 with `ATD`) gives confusing
+    it with. `ATD` or `ATDT` only changes what Zimodem does. So use `ATDX` with 2323 and
+    `ATDTX` with 2324: dialling 2323 with `ATDT` (or 2324 with `ATD`) gives confusing
     results.
+  - **Add the `X`** to a dial you type yourself. With flow control on, Zimodem obeys the
+    card's XOFF/XON only on a call dialled with X; without it they reach the server as
+    data, and a fast flood can lose text. The phonebook adds the X itself.
 - [ ] **Phonebook:** for the later sections, have a `picoterm.cfg` on the SD card with two
   entries for the server:
 
@@ -116,7 +119,7 @@ twice. Then type into the terminal with no connection.
 ## 4. A call, raw and telnet
 
 - [ ] **4.1 WiFi** (if Zimodem isn't on your network yet): section 8 first.
-- [ ] **4.2 Raw call by hand:** type `ATD"<ip>:2323"` (`ATD` with the raw port) and press
+- [ ] **4.2 Raw call by hand:** type `ATDX"<ip>:2323"` (`ATD` with the raw port) and press
   ENTER. You get `CONNECT …`
   and the server's welcome and menu. The server's log shows the connection.
 - [ ] **4.3 Echo:** press E, type a line, press ENTER. It comes back once, not twice.
@@ -132,7 +135,7 @@ twice. Then type into the terminal with no connection.
   the test server redraws its menu once for each `+`. That's normal Hayes behaviour.
   - **(timing)** If Zimodem misses the escape, note whether the machine is 50 or 60 Hz:
     the guard is 66 ticks.
-- [ ] **4.8 Telnet call:** type `ATDT"<ip>:2324"` (`ATDT` with the telnet port) and press
+- [ ] **4.8 Telnet call:** type `ATDTX"<ip>:2324"` (`ATDT` with the telnet port) and press
   ENTER, then press T at the menu.
   - [ ] **Terminal type** shown: _______ (expected `ANSI`; this checks `AT&S"41=ANSI"`).
   - [ ] **(Q7) Window size** shown: _______. `None` means Zimodem doesn't send NAWS: board
@@ -204,7 +207,8 @@ Use the test server's screens. Then try one or two real BBSes.
 - [ ] **7.1 At 300 baud:** the flood (F) arrives at about 30 characters a second. Every
   line is there, in order.
 - [ ] **7.2 Faster:** set `MODEM_BAUD=2400` in `config.ini` (or `0`, as fast as it's
-  read) and restart the card. Run the flood again:
+  read) and restart the card. Dial with the X (`ATDX`/`ATDTX`, or the phonebook). Run the
+  flood again:
   - [ ] all 200 lines arrive, numbered 000-199, none missing or doubled, in 32 columns;
   - [ ] the same in 64 columns (the slowest scroll).
   - **(Q5)** Needs firmware with `tpi:modem flow` (#301): PicoTerm turns it on at

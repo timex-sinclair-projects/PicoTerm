@@ -65,6 +65,8 @@ class Machine:
         self.sym = symbols()
         self.acia = acia
         self.pico = pico
+        if acia is not None and pico is not None:
+            acia.pico = pico                # the card reads its flow setting
         self.m = m = z80.Z80Machine()
         self.mem = m.memory
         with open(BIN, "rb") as f:

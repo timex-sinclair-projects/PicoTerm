@@ -85,7 +85,7 @@ def main():
     s.shot("startup")
 
     s = Scene()                                       # a call
-    s.type('atdt"bbs.example:23"\n')
+    s.type('atdtx"bbs.example:23"\n')
     s.m.run_frames(30)
     s.m.idle()
     s.shot("connect")
@@ -120,7 +120,7 @@ def main():
     data = bytes((i * 37 + 11) & 0xFF for i in range(3000))   # a download
     sender = XmodemSender(data)
     s = Scene(hosts={"files.example:23": lambda: sender})
-    s.type('atdt"files.example:23"\n')
+    s.type('atdtx"files.example:23"\n')
     s.m.run_frames(20)
     s.key("SPACE", "CAPS")
     s.key("x")

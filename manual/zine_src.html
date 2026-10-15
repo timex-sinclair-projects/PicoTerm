@@ -167,6 +167,7 @@ table.log td{height:24pt}
     <li>It puts the card's modem in Hayes mode (<code>tpi:modem hayes</code>).</li>
     <li>It resets the 8251, which starts the card's ESP32.</li>
     <li>It sends <code>AT</code> once a second until Zimodem answers <code>OK</code> (up to about 12&nbsp;s; Zimodem's banner may show first), then your init string (<code>ATE1V1X1Q0</code>) and the telnet terminal type (<code>AT&amp;S"41=ANSI"</code>).</li>
+    <li>It turns on flow control: <code>ATF1</code>, then <code>tpi:modem flow on</code>. Older firmware refuses, and PicoTerm carries on without.</li>
     <li>It shows <code>Modem ready.</code> You see everything the modem says. If something is missing, a message says so and PicoTerm carries on (section 12).</li>
   </ol>
   <div class="note"><b>Hayes mode stays</b>The TS-Pico saves the modem's mode in <code>config.ini</code>, so the card stays in Hayes mode after you quit. Before loading MTERM or another TS2050 program, type <kbd>SAVE "tpi:modem 2050"</kbd>.</div>
@@ -178,12 +179,13 @@ table.log td{height:24pt}
   <p>Once the modem is ready, everything you type goes to it. Zimodem echoes your typing and answers in words (<code>OK</code>, <code>CONNECT</code>, <code>NO CARRIER</code>), like a Hayes modem.</p>
   <ol>
     <li><strong>Join your WiFi</strong>, once: <kbd>BREAK</kbd>, then <kbd>W</kbd> (section 9).</li>
-    <li><strong>Dial a host</strong> by typing its address in quotes: <code>ATDT"bbs.example.com:23"</code> <kbd>ENTER</kbd>. The <code>T</code> asks for telnet, which most BBSes want; <code>ATD"…"</code> is a raw TCP port.</li>
+    <li><strong>Dial a host</strong> by typing its address in quotes: <code>ATDTX"bbs.example.com:23"</code> <kbd>ENTER</kbd>. The <code>T</code> asks for telnet, which most BBSes want, and the <code>X</code> turns on flow control. <code>ATDX"…"</code> is a raw TCP port.</li>
     <li>Zimodem answers <code>CONNECT</code>. From now on everything you type goes to the BBS.</li>
     <li><strong>To hang up</strong>: <kbd>BREAK</kbd>, then <kbd>H</kbd>. If the BBS hangs up first, you see <code>NO CARRIER</code>.</li>
   </ol>
-  <p>Put the hosts you use in the phonebook (section 8) and dial them with one key.</p>
-  <figure class="shot small-shot">{{img:connect}}<figcaption>Dialling by hand: ATDT, CONNECT, the BBS's greeting.</figcaption></figure>
+  <p>Put the hosts you use in the phonebook (section 8) and dial them with one key; it adds the <code>X</code> itself.</p>
+  <div class="note"><b>Why the X</b>When the BBS sends faster than the 2068 draws, the card tells Zimodem to pause and go on (XOFF, XON). Zimodem obeys only on a call dialled with <code>X</code>; without it a fast host can overrun the card. It needs firmware with <code>tpi:modem flow</code>.</div>
+  <figure class="shot small-shot">{{img:connect}}<figcaption>Dialling by hand: ATDTX, CONNECT, the BBS's greeting.</figcaption></figure>
 </section>
 
 <section id="keys">
@@ -201,7 +203,7 @@ table.log td{height:24pt}
     <tr><td class="k"><kbd>ENTER</kbd></td><td></td><td>CR, or CR LF as set</td></tr>
   </table>
   <h3>Control keys</h3>
-  <p>Press <kbd>CAPS</kbd> and <kbd>SYM</kbd> together, let go, then press a letter: PicoTerm sends it as a control key. <kbd>CAPS</kbd>+<kbd>SYM</kbd>, <kbd>C</kbd> sends <b>Ctrl-C</b>. Pressing <kbd>CAPS</kbd>+<kbd>SYM</kbd> twice cancels it. It works for the letters and <kbd>[</kbd> <kbd>\</kbd> <kbd>]</kbd> <kbd>^</kbd> <kbd>_</kbd>.</p>
+  <p>Press <kbd>CAPS</kbd> and <kbd>SYM</kbd> together, let go, then press a letter: PicoTerm sends it as a control key. <kbd>CAPS</kbd>+<kbd>SYM</kbd>, <kbd>C</kbd> sends <b>Ctrl-C</b>. Pressing <kbd>CAPS</kbd>+<kbd>SYM</kbd> twice cancels it. It works for the letters and <kbd>[</kbd> <kbd>\</kbd> <kbd>]</kbd> <kbd>^</kbd> <kbd>_</kbd>. With flow control, Zimodem keeps Ctrl-S and Ctrl-Q for itself.</p>
 </section>
 
 <section id="symbols">
@@ -286,7 +288,7 @@ table.log td{height:24pt}
   <p>20 hosts. Move with <kbd>CAPS</kbd>+<kbd>6</kbd> and <kbd>CAPS</kbd>+<kbd>7</kbd>.</p>
   <table>
     <tr><th>Key</th><th>Does</th></tr>
-    <tr><td class="k"><kbd>ENTER</kbd></td><td><b>Dial</b>: applies the entry's settings, goes back to the terminal, sends <code>ATDT"host:port"</code> (<code>ATD</code> with telnet off).</td></tr>
+    <tr><td class="k"><kbd>ENTER</kbd></td><td><b>Dial</b>: applies the entry's settings, goes back to the terminal, sends <code>ATDTX"host:port"</code> (<code>ATDX</code> with telnet off).</td></tr>
     <tr><td class="k"><kbd>N</kbd></td><td><b>New</b>: the name, <kbd>ENTER</kbd>, the host, <kbd>ENTER</kbd>, then <kbd>ENTER</kbd> to save. It starts with your current settings.</td></tr>
     <tr><td class="k"><kbd>E</kbd> / <kbd>X</kbd></td><td><b>Edit</b> / <b>delete</b> (<kbd>Y</kbd> confirms).</td></tr>
   </table>
@@ -376,7 +378,8 @@ table.log td{height:24pt}
     <tr><td><code>The sender didn't start.</code></td><td>Nothing from the BBS for about 30&nbsp;s. Start the download on the BBS first.</td></tr>
     <tr><td><code>Too many errors. Cancelled.</code></td><td>Ten bad blocks in a row. Try again.</td></tr>
   </table>
-  <div class="note"><b>Slow text</b>The card passes text to the 2068 no faster than its <code>MODEM_BAUD</code> setting: 300 baud unless changed, which is 30 characters a second. Raise it in the TS-Pico's <code>config.ini</code> (2400 or more); PicoTerm keeps up.</div>
+  <div class="note"><b>Slow text</b>The card passes text to the 2068 no faster than its <code>MODEM_BAUD</code> setting: 300 baud unless changed, 30 characters a second. Raise it in the TS-Pico's <code>config.ini</code>: <code>0</code> (no limit) is safe with flow control. Without it, keep to about 2400, or a fast host can overrun the card.</div>
+  <div class="note"><b>Text missing in a fast stream</b>Dial with the <code>X</code> (<code>ATDTX</code>, or the phonebook), and check the card's firmware has <code>tpi:modem flow</code>.</div>
 </section>
 
 <section id="limits">
@@ -389,6 +392,7 @@ table.log td{height:24pt}
     <li><b>Keyboard:</b> the symbol keys follow the Spectrum's legends, which the 2068 mostly shares; the tables in section 4 are what PicoTerm does.</li>
     <li><b>Screen width:</b> PicoTerm can't tell a telnet host your width itself. Most BBSes ask, or measure it with the cursor-position question, which PicoTerm answers.</li>
     <li><b>The modem:</b> the TS-Pico's, in Hayes mode, with its 8251 emulation. Not a stock TS2050.</li>
+    <li><b>Ctrl-S and Ctrl-Q</b> don't reach the host on a call with flow control.</li>
   </ul>
 </section>
 
@@ -442,7 +446,7 @@ table.log td{height:24pt}
     </table>
   </div>
   <h3>Dialling by hand</h3>
-  <p><code>ATDT"host:port"</code> telnet · <code>ATD"host:port"</code> raw · <code>ATI</code> status · <code>ATW</code> scan WiFi</p>
+  <p><code>ATDTX"host:port"</code> telnet · <code>ATDX"host:port"</code> raw · <code>ATI</code> status · <code>ATW</code> scan WiFi</p>
   <p class="colophon">PicoTerm 0.6 © 2026 · for the TS-2068 and TS-Pico v3 · timexsinclair.com</p>
 </div>
 </body></html>
