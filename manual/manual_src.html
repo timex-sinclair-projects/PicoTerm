@@ -133,7 +133,7 @@ details.spoiler[open] summary{margin-bottom:10px}
     <li><strong>The TS-Pico v3 card</strong>, with firmware that has the TS2050 modem emulation (the 8251 at ports <code>$73</code> and <code>$77</code>), and Zimodem on the card's ESP32. PicoTerm talks to Zimodem with Hayes <code>AT</code> commands, so the card's modem has to be in <em>Hayes mode</em>. PicoTerm switches it there itself where the firmware allows (<a href="#messages">section 12</a>).</li>
     <li><strong>A WiFi network</strong> the card can join. PicoTerm can scan for one and join it (<a href="#wifi">section 9</a>).</li>
     <li><strong>An SD card in the TS-Pico</strong>, for <code>picoterm.cfg</code> (your settings and phonebook) and for downloads.</li>
-    <li><em>Optional:</em> <strong>PicoVideo</strong>, for 80 columns and for color in 64 columns, on its HDMI output.</li>
+    <li><em>Optional:</em> <strong>PicoVideo</strong>, for 80 columns and for color in 64 columns, on its VGA output.</li>
   </ul>
   <div class="note"><b>A real TS2050?</b>PicoTerm is written for the TS-Pico's modem. It doesn't pulse-dial, and it doesn't watch the TS2050's carrier line, so it won't drive an original 300-baud TS2050. Use MTERM for that.</div>
 </section>
@@ -243,7 +243,7 @@ details.spoiler[open] summary{margin-bottom:10px}
     <tr><th>Mode</th><th>Needs</th><th>Color</th><th>Notes</th></tr>
     <tr><td><b>32</b></td><td>any 2068</td><td>Per character</td><td>Readable on any TV. Most BBSes wrap their 80-column screens.</td></tr>
     <tr><td><b>64</b></td><td>any 2068</td><td>One ink and paper for the whole screen; per character with PicoVideo</td><td>The 2068's own 64-column mode. Pick the ink in Settings (<kbd>I</kbd>); the paper is its complement. Characters are 4 pixels wide, so a sharp display helps.</td></tr>
-    <tr><td><b>80</b></td><td>PicoVideo</td><td>Per character</td><td>PicoVideo's text mode, on its HDMI output. The 2068's own video output shows nothing useful in this mode. Turn on <b>PicoVideo</b> in Settings to use it.</td></tr>
+    <tr><td><b>80</b></td><td>PicoVideo</td><td>Per character</td><td>PicoVideo's text mode, on its VGA output. The 2068's own video output shows nothing useful in this mode. Turn on <b>PicoVideo</b> in Settings to use it.</td></tr>
   </table></div>
   <div class="gallery">
     <figure class="shot">{{img:bbs_64}}<figcaption>64 columns on a stock 2068: one color pair.</figcaption></figure>

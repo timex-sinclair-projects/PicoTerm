@@ -278,7 +278,7 @@ Rows: the terminal is **24 rows** in every mode; ANSI BBSes expect 24. The statu
 overlay, shown while a PicoTerm menu or prompt is open, and briefly on events (CONNECT,
 NO CARRIER, transfer progress).
 
-On a TV, 64 columns needs a sharp display, and 80 columns needs PicoVideo's HDMI output. The
+On a TV, 64 columns needs a sharp display, and 80 columns needs PicoVideo's VGA output. The
 SCLD itself has no mode 5, so the 2068's own video output shows garbage in 80-column mode.
 
 **Color mapping.** ANSI color n maps to Spectrum color `[0,2,4,6,1,3,5,7][n]`. Bold sets
@@ -687,7 +687,7 @@ The plan before M2:
   public BBSes. Checks:
   - scroll speed at each column mode and pacing rate;
   - XMODEM with `sz` / `lrzsz` on a Mac or Linux host;
-  - PicoVideo on HDMI.
+  - PicoVideo on VGA.
 
 ## 13. Milestones
 

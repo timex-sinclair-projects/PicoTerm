@@ -23,7 +23,7 @@ TS-Pico v3 card.
 | `config.ini`: `MODEM_MODE`, `MODEM_BAUD` | |
 | PicoVideo version, if fitted | |
 | PicoTerm commit (`git log -1 --format=%h`) | |
-| Display: TV / composite monitor / PicoVideo HDMI | |
+| Display: TV / composite monitor / PicoVideo VGA | |
 
 ## 1. Before you start
 
@@ -174,7 +174,7 @@ Use the test server's screens. Then try one or two real BBSes.
 - [ ] **5.7 PicoVideo** (if fitted): Settings, P, Yes.
   - [ ] **64 columns in color:** CAPS+9 gives DECR mode 7, and ANSI colors show per
     character.
-  - [ ] **80 columns:** CAPS+9 again gives PicoVideo's text mode on HDMI. The colors
+  - [ ] **80 columns:** CAPS+9 again gives PicoVideo's text mode on VGA. The colors
     match 32 columns, and the cursor is a reversed cell.
   - [ ] **Back to 32:** CAPS+9 returns to 32 with the text intact.
 - [ ] **5.8 A real BBS** in ANSI, 32 and 64 columns. Name: _______________. Note anything
