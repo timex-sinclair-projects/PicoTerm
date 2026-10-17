@@ -201,7 +201,7 @@ class MenuTest(unittest.TestCase):
         self.assertIn('AT&S"41=ANSI"', self.zm.commands[-2])
         m.run_frames(20)
         m.idle()
-        self.assertIn("Dialling Test BBS", "\n".join(m.shadow_text()))
+        self.assertIn("Dialing Test BBS", "\n".join(m.shadow_text()))
         self.assertIn("Welcome to the test BBS", "\n".join(m.shadow_text()))
 
     def test_arrows_move_the_selection(self):
@@ -222,7 +222,7 @@ class MenuTest(unittest.TestCase):
         self.key("6", "CAPS")
         self.assertIn(">", m.screen_text()[3])         # empty slots can be chosen
 
-    def test_entry_settings_apply_when_dialled(self):
+    def test_entry_settings_apply_when_dialed(self):
         m = self.start()
         self.menu()
         self.key("d")
@@ -328,7 +328,7 @@ class MenuTest(unittest.TestCase):
 
     # --- wider modes ------------------------------------------------------------------
 
-    def test_menu_centred_in_80_columns(self):
+    def test_menu_centered_in_80_columns(self):
         m = self.start(picovideo=True)
         m.mem[m.sym["set_cols"]] = VM_80
         self.key("9", "CAPS")

@@ -1,5 +1,5 @@
 ; vid64.asm - 64-column driver: the SCLD's 64-column mode (or PicoVideo's
-; mode 7, the same with a colour per cell)
+; mode 7, the same with a color per cell)
 ;
 ; Even columns are display file 1 and odd columns display file 2, each 32
 ; bytes wide (Technical Manual 5.2.3): column C is byte C/2 of file C&1. So

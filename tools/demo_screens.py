@@ -35,18 +35,18 @@ BBS_MENU = (
 
 
 def box_menu(width):
-    """A CP437 box-drawn BBS menu, centred for this width."""
+    """A CP437 box-drawn BBS menu, centered for this width."""
     inner = 30
     left = (width - inner - 2) // 2 + 1
     def at(row, text):
         return E + b"%d;%dH" % (row, left) + text
     out = E + b"0m" + E + b"2J" + E + b"1;36m"
     out += at(2, b"\xc9" + b"\xcd" * inner + b"\xbb")
-    for i, (key, label, colour) in enumerate([
+    for i, (key, label, color) in enumerate([
             (b"M", b"Message areas", b"32"), (b"F", b"File library", b"32"),
             (b"W", b"Who's online", b"33"), (b"G", b"Goodbye", b"31")]):
-        line = (E + b"1;37m [" + E + b"1;" + colour + b"m" + key + E + b"1;37m] "
-                + E + b"0;" + colour + b"m" + label.ljust(inner - 5))
+        line = (E + b"1;37m [" + E + b"1;" + color + b"m" + key + E + b"1;37m] "
+                + E + b"0;" + color + b"m" + label.ljust(inner - 5))
         out += at(3 + i, E + b"1;36m\xba" + line + E + b"1;36m\xba")
     out += at(7, b"\xc8" + b"\xcd" * inner + b"\xbc")
     out += E + b"0;44;33m" + E + b"10;1H" + E + b"K"

@@ -19,7 +19,7 @@ Runs of `docs/hardware-test-checklist.md` on real hardware. The newest are first
 | 4.4 Backspace | Pass: 08h |
 | 4.5 Arrows | Pass: `1b 5b 44`, `42`, `41`, `43` |
 | 4.6 Remote hang-up | Pass |
-| 4.7 Local hang-up | Pass. The `+++` reaches the host as data first (normal Hayes behaviour), then OK, ATH, OK, and the connection closes |
+| 4.7 Local hang-up | Pass. The `+++` reaches the host as data first (normal Hayes behavior), then OK, ATH, OK, and the connection closes |
 | 4.8 Telnet | Pass. TTYPE: WILL, SB is "ANSI". NAWS: Zimodem answers WONT, so a host never gets the window size (Q7) |
 | 4.9 Quit while online | Pass: hangs up, then 0 OK |
 | 5.1 ANSI screen | Pass |
@@ -33,12 +33,12 @@ Runs of `docs/hardware-test-checklist.md` on real hardware. The newest are first
 | 9.2 Load it back | Pass: `LOAD "f:download.bin" CODE 40000`, 0 OK |
 | 9.3 Replace | Pass. PicoTerm asked, Y saved it, and the TS-Pico didn't ask a second time (the 88h prompt was answered). 13.4 s |
 | 9.4 6,912 bytes | Pass: 54 blocks, 12.3 s |
-| 9.5 Too big | Pass: cancelled at block 55 |
+| 9.5 Too big | Pass: canceled at block 55 |
 | 9.6 1K blocks | Not run yet |
 | 9.7 Checksum only | Pass: 8 blocks |
 | 9.8 FFh-heavy, raw | Pass: exact |
 | 9.9 FFh-heavy, telnet | Pass: 16 blocks, 7.2 s, 0 NAKs, exact. Zimodem undoubles IAC (Q7) |
-| 9.10 Cancel | Pass. Retried with BREAK after block 8: CAN x 5, and the server cancelled after 8 blocks and went back to its menu. First try: PicoTerm said "Cancelled." BREAK came at the very end, so the last ACK and CAN x 5 arrived together. The test server's sender then stuck after EOT, a server bug (sender fixed: CAN in any state) |
+| 9.10 Cancel | Pass. Retried with BREAK after block 8: CAN x 5, and the server canceled after 8 blocks and went back to its menu. First try: PicoTerm said "Canceled." BREAK came at the very end, so the last ACK and CAN x 5 arrived together. The test server's sender then stuck after EOT, a server bug (sender fixed: CAN in any state) |
 
 **Found on the way, in the test server rather than PicoTerm:**
 - **The XMODEM deadline:** a flat 90 s was too short at 300 baud, where each block takes

@@ -8,7 +8,7 @@
 
 INPUT_MAX       equ 64
 
-; ui_input: NC = accepted (HL's string changed), C = cancelled.
+; ui_input: NC = accepted (HL's string changed), C = canceled.
 ui_input:
         ld (in_target),hl
         ld (in_pos),bc

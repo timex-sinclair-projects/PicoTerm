@@ -27,7 +27,7 @@ Statements marked **(to verify)** need a test on the card or an answer from anot
 |---|---|
 | Modem | The card in **Hayes mode** only. The 8251 driver is a separate module, so a real-2050 back end (pulse dialing, DSR carrier) could be added later. |
 | Display | **32 columns** (standard screen), **64 columns** (SCLD hi-res, mode 6), **80 columns** (PicoVideo mode 5). Selectable at run time. |
-| Emulation | **ANSI-BBS** (a VT100 subset with colour, CP437), **VT52**, **TTY**. |
+| Emulation | **ANSI-BBS** (a VT100 subset with color, CP437), **VT52**, **TTY**. |
 | Character set | CP437 in all three modes: a built-in 2 KB 8x8 font for 32/64 columns, PicoVideo's own font for 80. |
 | File transfer | **XMODEM-CRC and XMODEM-1K download** to the TS-Pico's SD card. |
 | Files | Through the TS-Pico command protocol on ports 14/15 (raw ports, the programmer's manual's way), never through the ROM. |
@@ -189,7 +189,7 @@ Makefile
   `ATF1`, then `tpi:modem flow on`, in that order: with Zimodem's flow control off, the
   card's XOFF and XON would reach the host as data. A card that refuses it is left alone.
   On quit, `tpi:modem flow off` (Zimodem keeps F1 until reset). Zimodem obeys XON/XOFF
-  only with `ATF1` *and* on a connection dialled with the `X` modifier: the connection
+  only with `ATF1` *and* on a connection dialed with the `X` modifier: the connection
   carries its own flag (`ConnSettings`), and `F` only sets the serial side. With `ATF1`
   alone, the card's XOFF reached the BBS as data (board 1, 2026-10-15). So the phonebook
   dials `ATDTX"host:port"` (`ATDX` for raw TCP) while flow control is on, and a dial typed
@@ -216,7 +216,7 @@ makes it possible to change column mode in the middle of a session.
 |---|---|---|---|
 | Hardware | SCLD mode 0 | SCLD mode 6 (DECR 6 + ink in bits 3-5) | PicoVideo mode 5 |
 | Glyphs | 8x8 from our font, 8 bytes into DF1 | 8x8, even columns in DF1, odd in DF2 | One byte at 4000h + row x 80 + col |
-| Colour | Per cell (Spectrum attributes) | One colour pair for the whole screen; per cell with PicoVideo mode 7 (**to verify** where its attributes live) | Per cell at 4780h (**to verify** the attribute format; assumed to be the Spectrum one) |
+| Color | Per cell (Spectrum attributes) | One color pair for the whole screen; per cell with PicoVideo mode 7 (**to verify** where its attributes live) | Per cell at 4780h (**to verify** the attribute format; assumed to be the Spectrum one) |
 | Scroll one line | ~5.9 KB of LDI, about 27 ms | ~11.8 KB, about 54 ms | ~3.7 KB, about 17 ms |
 | Cursor | XOR an underline | XOR an underline | Invert the cell's attribute |
 
@@ -241,7 +241,7 @@ part of R3:
   in the Spectrum attribute format, drawn from the CP437 font.
 - **Mode 7** is the SCLD's 64-column mode, but with attributes: 5800h for the even
   columns and 7800h for the odd ones, the same places as in 32 columns.
-- **Mode 6** uses one colour pair, taken from DECR bits 3-5.
+- **Mode 6** uses one color pair, taken from DECR bits 3-5.
 
 Measured on the host machine at 3.5 MHz:
 
@@ -270,7 +270,7 @@ the 64-column scroll later: one pass over both display files, and unrolled copie
 describes an 80-column screen built on the 64-column hardware with a 6x8 font: 512 dots
 make room for 85 characters. A character can span both display files, so drawing it means
 masking and shifting, which is slower than the byte-aligned modes. This would give an
-80-column ANSI screen on any 2068, in one colour, at the cost of very narrow glyphs. It's a
+80-column ANSI screen on any 2068, in one color, at the cost of very narrow glyphs. It's a
 candidate for after M4. Appendix C of the manual has the original package, but its listing
 isn't in the Markdown copy.
 
@@ -281,7 +281,7 @@ NO CARRIER, transfer progress).
 On a TV, 64 columns needs a sharp display, and 80 columns needs PicoVideo's HDMI output. The
 SCLD itself has no mode 5, so the 2068's own video output shows garbage in 80-column mode.
 
-**Colour mapping.** ANSI colour n maps to Spectrum colour `[0,2,4,6,1,3,5,7][n]`. Bold sets
+**Color mapping.** ANSI color n maps to Spectrum color `[0,2,4,6,1,3,5,7][n]`. Bold sets
 BRIGHT, blink sets FLASH (switchable off), and reverse swaps INK and PAPER. The 2068's BRIGHT
 applies to both INK and PAPER of a cell, so ANSI's "bright background" can't be shown on its
 own.
@@ -308,16 +308,16 @@ backspace sends 08h or 7Fh; local echo on/off; strip bit 7.
 
 As built in M3:
 - **Parameters:** a CSI sequence keeps up to 8 parameters, each held at 255 at most. A
-  private marker (`<`, `=`, `>`, `?`) and intermediate bytes are recognised. Only `?`
+  private marker (`<`, `=`, `>`, `?`) and intermediate bytes are recognized. Only `?`
   sequences ending `h` or `l` are acted on; the rest are parsed and dropped.
 - **Controls inside a sequence** (C0) act at once. ESC starts a new sequence, and CAN or SUB
   abandons it.
 - **Strings:** OSC strings are skipped up to BEL or ST.
 - **Following ANSI.SYS, which BBS screens are drawn for:** `ESC [ 2 J` homes the cursor, and
-  FF clears the screen and homes, keeping the colours.
+  FF clears the screen and homes, keeping the colors.
 - **Cursor:** IL and DL put the cursor in column 0. CUU and CUD stop at the margins of the
   scrolling region when they start inside it.
-- **Extended colours:** SGR 38/48 with `5;n` use the first 16 colours; `2;r;g;b` is
+- **Extended colors:** SGR 38/48 with `5;n` use the first 16 colors; `2;r;g;b` is
   skipped.
 - **Replies** go to the modem: CPR (`ESC [ row ; col R`), DA (`ESC [ ? 1 ; 0 c`), and DSR 5
   (`ESC [ 0 n`).
@@ -443,7 +443,7 @@ The menu holds:
 - Hang up;
 - WiFi;
 - Download (XMODEM);
-- Settings: emulation, columns, PicoVideo, translations, colours, init string;
+- Settings: emulation, columns, PicoVideo, translations, colors, init string;
 - Clear screen;
 - Send break;
 - Exit to BASIC.
@@ -461,7 +461,7 @@ BREAK opens the menu:
 BREAK or EDIT (Esc) goes back a level from every screen.
 
 **Windows:**
-- **Drawing:** windows are 32 cells wide and centred in wider modes. They're drawn
+- **Drawing:** windows are 32 cells wide and centered in wider modes. They're drawn
   straight through the driver, so the shadow keeps the terminal. Closing a window
   redraws from the shadow, and so does coming back to the menu from a screen under it.
 - **Received bytes:** while a window is open they wait in the ring (`RX_HOLD`). When a
@@ -474,10 +474,10 @@ BREAK or EDIT (Esc) goes back a level from every screen.
 **Phonebook:**
 - **Entries:** 20, each with a name (16 characters), `host:port` (40), and its own
   settings: telnet (ATDT or ATD), emulation, columns, backspace and local echo.
-- **Dialling** applies the entry's settings, switches column mode if needed (64 without
+- **Dialing** applies the entry's settings, switches column mode if needed (64 without
   PicoVideo instead of 80), returns to the terminal, sends the terminal type, then
   `ATDT"host:port"`. CONNECT or NO ANSWER then shows in the terminal.
-- **While connected**, dialling is refused with "Hang up first."
+- **While connected**, dialing is refused with "Hang up first."
 
 **WiFi:**
 - **Scanning:** `ATW` lists networks as `SSID (RSSI)*` (Zimodem's `doWiFiCommand`), and
@@ -516,7 +516,7 @@ phone=Test BBS|bbs.example:23|1|2|0|8|0
   messages silenced.
 - **Bad lines:** unknown keys, out-of-range numbers and malformed phone lines are skipped.
 
-**Memory after M5:** code and data are 12.8 KB (8800h-B9FFh). Uninitialised data runs to
+**Memory after M5:** code and data are 12.8 KB (8800h-B9FFh). Uninitialized data runs to
 DF69h: the ring, the shadow, the phonebook, the capture buffer, and the command and WiFi
 buffers. That leaves about 5 KB below the stack for M6.
 
@@ -558,7 +558,7 @@ default. At that rate a 1 KB block takes 34 s, so useful downloads need a higher
 Later: YMODEM batch (it carries the name and the exact size, so there's no padding), XMODEM
 upload, and capturing a session to a file. Uploads have a catch: with Zimodem's XON/XOFF on,
 11h and 13h in the data would be swallowed on an X connection (above). The X is fixed when
-the call is dialled, so an upload either runs on a call dialled without X (flow control
+the call is dialed, so an upload either runs on a call dialed without X (flow control
 off for the whole call), or has the card's side off and accepts that Zimodem still eats
 those two bytes: to be worked out with the upload.
 Zimodem's `AT&G` (fetch a file over HTTP) is another way to get files that may be worth a
@@ -627,7 +627,7 @@ timex-sinclair-projects/tspico-firmware-build#298 and #299.
 |---|---|---|---|---|
 | R1 | firmware | Set the receive pacing at run time: e.g. `tpi:modem baud <n>` (with 0 = unpaced) | 300 baud makes downloads and 80-column BBS screens slow | The user edits `MODEM_BAUD` in `config.ini` |
 | R2 | firmware | A binary-safe channel write: e.g. a mode flag that turns off the 17h TAB escape, or a `tpi:chwrb` | XMODEM to a plain file | RAM buffer + `f:` CODE with a +3DOS header |
-| R3 | PicoVideo | A way to detect the board (a readable ID register). The mode 5 and 7 attribute layouts are now known from the source (section 5). | Choosing 80 columns and 64-column colour automatically | A manual setting (`set_picovideo`) |
+| R3 | PicoVideo | A way to detect the board (a readable ID register). The mode 5 and 7 attribute layouts are now known from the source (section 5). | Choosing 80 columns and 64-column color automatically | A manual setting (`set_picovideo`) |
 | R4 | firmware / emulators | The 8251 at $73/$77 in `pico_host` (the plain-C 8251 from firmware step 2) with its UART on a TCP socket or a fake Zimodem | Testing in ZEsarUX/Fuse | Host tests only (section 12) |
 
 **Open questions:**
@@ -696,7 +696,7 @@ The plan before M2:
    emulation, a local "typewriter".
 3. **M2 Modem.** 8251 driver, ring buffer, a dumb terminal to Zimodem (`AT`, `ATI`,
    `ATDT"host:port"` by hand). Needs the firmware's step 2 on the card.
-4. **M3 ANSI and VT52.** Parsers with host tests; colour.
+4. **M3 ANSI and VT52.** Parsers with host tests; color.
 5. **M4 64 and 80 columns.** The two drivers, the CP437 font, switching modes from the shadow,
    scroll timing.
 6. **M5 Menus.** Phonebook, WiFi, dial and hang-up, status bar, settings, `picoterm.cfg`.

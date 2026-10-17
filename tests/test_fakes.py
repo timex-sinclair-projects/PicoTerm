@@ -30,7 +30,7 @@ class XmodemSenderTest(unittest.TestCase):
             s.receive(ACK)
         for b in (ACK, CAN, CAN, CAN, CAN, CAN):
             s.receive(b)
-        self.assertEqual(s.state, "cancelled")
+        self.assertEqual(s.state, "canceled")
 
     def test_cancel_in_every_state(self):
         for steps in (0, 1, 2):
@@ -40,7 +40,7 @@ class XmodemSenderTest(unittest.TestCase):
             if steps >= 2:
                 s.receive(ACK)
             s.receive(CAN)
-            self.assertEqual(s.state, "cancelled", f"after {steps} steps")
+            self.assertEqual(s.state, "canceled", f"after {steps} steps")
 
     def test_typing_after_eot_ends_it(self):
         s = XmodemSender(b"x" * 300)

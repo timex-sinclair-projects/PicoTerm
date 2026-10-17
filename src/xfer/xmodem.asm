@@ -12,7 +12,7 @@
 ;
 ; Bytes come straight from the receive ring (rx_get) with rx_mode at
 ; RX_HOLD, so nothing else takes them. The file goes to XFER_BUF, at most
-; XFER_MAX bytes; a longer one is cancelled.
+; XFER_MAX bytes; a longer one is canceled.
 
 SOH             equ 01h
 STX             equ 02h
@@ -22,7 +22,7 @@ NAK             equ 15h
 CAN             equ 18h
 
 XM_OK           equ 0               ; xm_receive's results
-XM_CANCELLED    equ 1               ; by the sender
+XM_CANCELED    equ 1               ; by the sender
 XM_BREAK        equ 2               ; by the user
 XM_TOO_BIG      equ 3
 XM_ERRORS       equ 4               ; too many errors, or out of sequence
@@ -101,7 +101,7 @@ xm_receive:
         jr nc,.next
         cp CAN
         jr nz,.next
-        ld a,XM_CANCELLED
+        ld a,XM_CANCELED
         ret
 .eot:
         ld a,ACK

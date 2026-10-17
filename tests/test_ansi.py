@@ -1,4 +1,4 @@
-"""M3: the ANSI-BBS, VT52 and TTY emulations, colour and the bell, on the
+"""M3: the ANSI-BBS, VT52 and TTY emulations, color and the bell, on the
 host machine. Bytes are fed in as if the modem received them; the screen
 is checked in the shadow (characters and attributes) and in the bitmap.
 """
@@ -199,7 +199,7 @@ class AnsiTest(EmulationTest):
         self.feed(CSI + b"20B")
         self.assertEqual(self.cursor(), (9, 0))
 
-    # --- colour --------------------------------------------------------------
+    # --- color --------------------------------------------------------------
 
     def test_sgr(self):
         self.feed(CSI + b"1;31;44mA" + CSI + b"0mB" + CSI + b"7mC" + CSI + b"27;32mD"
@@ -220,7 +220,7 @@ class AnsiTest(EmulationTest):
         ])
         self.assert_bitmap_matches()
 
-    def test_sgr_extended_colours(self):
+    def test_sgr_extended_colors(self):
         self.feed(CSI + b"38;5;1mA" + CSI + b"38;5;12mB" + CSI + b"0;48;5;2mC"
                   + CSI + b"0;38;2;10;20;30;35mD" + CSI + b"0;38;5;200mE")
         self.assertEqual(self.attrs(0)[:5], [

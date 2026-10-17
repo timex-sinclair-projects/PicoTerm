@@ -1,12 +1,12 @@
 ; ui.asm - windows over the terminal, and keys for them
 ;
-; Windows are 32 cells wide (they fit every mode) and centred in wider
+; Windows are 32 cells wide (they fit every mode) and centered in wider
 ; modes. They're drawn with drv_draw, not vid_put, so the shadow keeps the
 ; terminal's screen and ui_close puts it back with a redraw. While a window
 ; is open, received bytes wait in the ring (rx_mode = RX_HOLD), or go to the
 ; capture buffer when a screen asks Zimodem something (RX_CAPTURE).
 ;
-; In the SCLD's 64-column mode there's no colour, so selections are marked
+; In the SCLD's 64-column mode there's no color, so selections are marked
 ; with a ">" as well as a highlight.
 
 UI_W            equ 32

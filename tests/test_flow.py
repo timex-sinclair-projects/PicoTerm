@@ -3,7 +3,7 @@
 The fakes model what board 1 showed on 2026-10-14/15: Zimodem sends at the
 UART's rate, the card's line ring holds 16 KB and loses what laps it, the
 card sends XOFF at half full and XON below a quarter once `tpi:modem flow
-on` is set, and Zimodem obeys them only with ATF1 *and* a call dialled
+on` is set, and Zimodem obeys them only with ATF1 *and* a call dialed
 with X; after an XOFF it still sends up to its 4 KB serial buffer.
 """
 

@@ -38,7 +38,7 @@ dfile_open:
         ei                          ; Manual figure 3.2.2-2)
         ret
 
-; decr_mode: set DECR's mode and 64-column colour bits from A (bits 0-5).
+; decr_mode: set DECR's mode and 64-column color bits from A (bits 0-5).
 ; Keeps bit 7 (EXROM select) as the ROMs do, by reading the port back, and
 ; keeps bit 6 clear so the frame interrupt stays on.
 decr_mode:

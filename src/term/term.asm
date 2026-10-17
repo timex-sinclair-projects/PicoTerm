@@ -15,7 +15,7 @@ EMU_TTY         equ 0
 EMU_VT52        equ 1
 EMU_ANSI        equ 2
 
-; term_reset: home, full scrolling region, default colours, no sequence.
+; term_reset: home, full scrolling region, default colors, no sequence.
 term_reset:
         xor a
         ld (cur_col),a
@@ -236,7 +236,7 @@ term_ff:
         ld a,(set_emul)
         cp EMU_ANSI
         jp nz,term_full_reset
-        ld de,0+VID_ROWS-1          ; ANSI-BBS: clear and home, keep colours
+        ld de,0+VID_ROWS-1          ; ANSI-BBS: clear and home, keep colors
         call vid_clear_rows
         ld bc,0
         ; fall through
@@ -373,7 +373,7 @@ term_erase_screen:
         ld de,0+VID_ROWS-1
         jp vid_clear_rows
 
-; term_save / term_restore: the cursor and the colours (ESC 7 / ESC 8).
+; term_save / term_restore: the cursor and the colors (ESC 7 / ESC 8).
 term_save:
         ld hl,cur_col
         ld de,term_saved
@@ -396,9 +396,9 @@ term_restore:
         ld (term_wrap),a
         jp sgr_apply
 
-; --- colours (SGR) ----------------------------------------------------------
+; --- colors (SGR) ----------------------------------------------------------
 ;
-; The ANSI colours map onto the 2068's: n -> [0,2,4,6,1,3,5,7][n]. Bold is
+; The ANSI colors map onto the 2068's: n -> [0,2,4,6,1,3,5,7][n]. Bold is
 ; BRIGHT, blink is FLASH (if set_blink), reverse swaps INK and PAPER. The
 ; 2068's BRIGHT covers the whole cell, so a bright background can't be
 ; shown on its own.

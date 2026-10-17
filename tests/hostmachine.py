@@ -1,6 +1,6 @@
 """A TS-2068 model for host tests: PicoTerm's binary on the `z80` package.
 
-Only what PicoTerm touches is modelled: RAM, the system variables it reads,
+Only what PicoTerm touches is modeled: RAM, the system variables it reads,
 the keyboard matrix, the frame interrupt (IM2, data bus FFh), DECR and the
 HSR, and devices on the 8251 ports ($73/$77) and the TS-Pico ports (14/15).
 There's no ROM code: VIDMOD is preset to 80h, as if CHNG_VID had run, so

@@ -7,7 +7,7 @@ TS-Pico v3 card.
 **How to use it:**
 - Work through it in order: the early sections are the ones most likely to fail and the
   ones everything after depends on.
-- Tick each box, and write down anything unexpected next to the item.
+- Check off each box, and write down anything unexpected next to the item.
 - An item marked **(Q5)** or **(Q7)** answers an open question in `docs/DESIGN.md`
   section 11. Record what you see even if it "fails".
 
@@ -43,10 +43,10 @@ TS-Pico v3 card.
   and logs every byte both ways in hex. Note the computer's IP address: _______________
   - **The port decides** whether the server speaks raw TCP or telnet, whatever you dial
     it with. `ATD` or `ATDT` only changes what Zimodem does. So use `ATDX` with 2323 and
-    `ATDTX` with 2324: dialling 2323 with `ATDT` (or 2324 with `ATD`) gives confusing
+    `ATDTX` with 2324: dialing 2323 with `ATDT` (or 2324 with `ATD`) gives confusing
     results.
   - **Add the `X`** to a dial you type yourself. With flow control on, Zimodem obeys the
-    card's XOFF/XON only on a call dialled with X; without it they reach the server as
+    card's XOFF/XON only on a call dialed with X; without it they reach the server as
     data, and a fast flood can lose text. The phonebook adds the X itself.
 - [ ] **Phonebook:** for the later sections, have a `picoterm.cfg` on the SD card with two
   entries for the server:
@@ -132,7 +132,7 @@ twice. Then type into the terminal with no connection.
 - [ ] **4.7 Local hang-up:** reconnect, then BREAK, then H. About a second of silence,
   `+++` in the server's log, another second, then `OK`, then `ATH` and `OK`. The server
   sees the connection close. The `+++` reaches the host as data before Zimodem acts on it:
-  the test server redraws its menu once for each `+`. That's normal Hayes behaviour.
+  the test server redraws its menu once for each `+`. That's normal Hayes behavior.
   - **(timing)** If Zimodem misses the escape, note whether the machine is 50 or 60 Hz:
     the guard is 66 ticks.
 - [ ] **4.8 Telnet call:** type `ATDTX"<ip>:2324"` (`ATDT` with the telnet port) and press
@@ -148,7 +148,7 @@ twice. Then type into the terminal with no connection.
 Use the test server's screens. Then try one or two real BBSes.
 
 - [ ] **5.1 ANSI (A):**
-  - [ ] colours for foreground, bold and background;
+  - [ ] colors for foreground, bold and background;
   - [ ] reverse;
   - [ ] blink (FLASH);
   - [ ] the CP437 box;
@@ -170,11 +170,11 @@ Use the test server's screens. Then try one or two real BBSes.
 - [ ] **5.6 64 columns (CAPS+9):** the screen keeps its text, in the 64-column ink from
   Settings I.
   - [ ] Readable on your display? _____
-  - [ ] Settings I changes the colour pair.
+  - [ ] Settings I changes the color pair.
 - [ ] **5.7 PicoVideo** (if fitted): Settings, P, Yes.
-  - [ ] **64 columns in colour:** CAPS+9 gives DECR mode 7, and ANSI colours show per
+  - [ ] **64 columns in color:** CAPS+9 gives DECR mode 7, and ANSI colors show per
     character.
-  - [ ] **80 columns:** CAPS+9 again gives PicoVideo's text mode on HDMI. The colours
+  - [ ] **80 columns:** CAPS+9 again gives PicoVideo's text mode on HDMI. The colors
     match 32 columns, and the cursor is a reversed cell.
   - [ ] **Back to 32:** CAPS+9 returns to 32 with the text intact.
 - [ ] **5.8 A real BBS** in ANSI, 32 and 64 columns. Name: _______________. Note anything
@@ -192,7 +192,7 @@ Use the test server's screens. Then try one or two real BBSes.
   - [ ] E edits it, and T/E/C/B/L change its settings.
   - [ ] ENTER dials it: `AT&S"41=…"`, then `ATDT"…"` (or `ATD`), then CONNECT.
   - [ ] The entry's column mode and emulation take effect.
-- [ ] **6.4 Dialling while online** says "Hang up first."
+- [ ] **6.4 Dialing while online** says "Hang up first."
 - [ ] **6.5 Save** (Settings, S): "Saved to picoterm.cfg." Check the file on a PC: plain
   text, the keys as in the manual, one `phone=` line per entry.
 - [ ] **6.6 Reload:** reset, load PicoTerm again. The settings and phonebook come back,
@@ -271,8 +271,8 @@ silence.
   exact, 0 NAKs, so Zimodem undoubles IAC in stream mode. If a later Zimodem fails here,
   the errors count up and it ends "Too many errors".
 - [ ] **9.10 Cancel:** press BREAK early in a transfer, within the first few blocks (at the
-  very end, PicoTerm's last ACK can arrive with the CANs). BREAK gives "Cancelled.", the server's log shows
-  CAN x 5, and the server says "XMODEM cancelled".
+  very end, PicoTerm's last ACK can arrive with the CANs). BREAK gives "Canceled.", the server's log shows
+  CAN x 5, and the server says "XMODEM canceled".
 - [ ] **9.11 In 64 columns:** start in 64 columns. PicoTerm drops to 32 during the
   transfer and returns to 64 after.
 - [ ] **9.12 The SAVE itself:** note how long "Saving..." takes: _____ s.
@@ -284,7 +284,7 @@ silence.
 
 ## 10. Back to BASIC
 
-- [ ] **10.1** BREAK, then Q, gives `0 OK`, the normal screen in BASIC's colours, and the
+- [ ] **10.1** BREAK, then Q, gives `0 OK`, the normal screen in BASIC's colors, and the
   border restored.
 - [ ] **10.2 BASIC works:** `PRINT 2+2`, enter and `LIST` a short program, `SAVE` and
   `LOAD` it through the TS-Pico.

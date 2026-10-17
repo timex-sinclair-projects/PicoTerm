@@ -161,7 +161,7 @@ vid_relayout:
 .fill:  db 0
 
 ; vid_select: point the drv_ jumps at mode A's driver, set vid_cols and the
-; DECR. The 64-column mode is PicoVideo's mode 7 (a colour per cell) when
+; DECR. The 64-column mode is PicoVideo's mode 7 (a color per cell) when
 ; set_picovideo says the board is there, else the SCLD's mode 6 in
 ; set_ink64.
 vid_select:
@@ -196,7 +196,7 @@ vid_select:
         jr nz,.decr
         ld a,(set_picovideo)
         or a
-        ld a,DECR_64COLOUR
+        ld a,DECR_64COLOR
         jp nz,decr_mode
         ld a,(set_ink64)
         add a,a

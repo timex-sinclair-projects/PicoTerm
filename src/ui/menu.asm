@@ -27,7 +27,7 @@ menu_run:
 .dial:
         call pb_run
         jr nc,.again                ; back from the phonebook
-        or a                        ; dialling: the terminal shows the rest
+        or a                        ; dialing: the terminal shows the rest
         ret
 .wifi:
         call wifi_run

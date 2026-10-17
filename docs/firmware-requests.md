@@ -115,7 +115,7 @@ A new command, `tpi:chwrb`, that writes its bytes exactly as given:
 - **Errors** are as for `tpi:chwr`: a stream that isn't open, or isn't open for writing,
   gets the same status `tpi:chwr` gives.
 - **Seeking** still works through `tpi:chwr 17xxxx`, so a program can mix the two.
-- **`tpi:chwr` is unchanged.** `PRINT #` and `LIST #` keep their behaviour, and nothing
+- **`tpi:chwr` is unchanged.** `PRINT #` and `LIST #` keep their behavior, and nothing
   that works today changes. A mode letter (say `tpi:chopen wx`) would also do. A separate
   command seems simpler to add and to document, and it can't change `PRINT #` by
   accident.

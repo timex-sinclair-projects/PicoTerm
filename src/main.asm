@@ -285,7 +285,7 @@ modem_start:
 ; fast host can't overflow the card's ring (16 KB) when the screen falls
 ; behind. Zimodem first (ATF1), then the card (tpi:modem flow on); a card
 ; without it refuses, and flow_on stays 0. Zimodem obeys XOFF only on a
-; connection dialled with X, so the phonebook adds it while flow_on is set;
+; connection dialed with X, so the phonebook adds it while flow_on is set;
 ; a dial typed by hand needs ATDTX. On such a connection Zimodem eats every
 ; 11h/13h sent from here, so an XMODEM upload, when there is one, has to
 ; turn flow control off first (DESIGN.md).
@@ -421,7 +421,7 @@ set_blink:      db 1                ; 0 = ANSI blink doesn't FLASH
 set_bell:       db 1                ; 0 = BEL is silent
 set_cols:       db VM_32            ; VM_32, VM_64 or VM_80 at start-up
 set_picovideo:  db 0                ; 1 = PicoVideo is fitted: 80 columns, and
-                                    ; colour in 64
+                                    ; color in 64
 set_ink64:      db 7                ; SCLD 64-column ink 0-7 (paper is its
                                     ; complement): 7 = white on black
 set_enter:      db 0                ; 1 = ENTER sends CR LF
@@ -467,7 +467,7 @@ FONT:                               ; 2 KB, page-aligned
 
 end_of_code:
 
-; --- uninitialised data, not in the binary --------------------------------
+; --- uninitialized data, not in the binary --------------------------------
 
 RX_RING         equ (end_of_code + 255) & 0FF00h    ; 2 KB, page-aligned
 SHADOW_CHR      equ RX_RING + RX_SIZE

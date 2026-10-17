@@ -71,7 +71,7 @@ class XmodemTest(unittest.TestCase):
         m.run_until(lambda: "Strip" in self.screen() or "." in self.screen().split("Download")[-1]
                     and self.m.var("rx_mode") != 0, limit=4000)
         m.run_until(lambda: any(w in self.screen() for w in
-                                ("Strip", "cancelled", "Cancelled", "Too big", "didn't start")),
+                                ("Strip", "canceled", "Canceled", "Too big", "didn't start")),
                     limit=4000)
         if "Strip" in self.screen():
             self.key("y" if strip else "n")
@@ -158,7 +158,7 @@ class XmodemTest(unittest.TestCase):
     def test_sender_cancels(self):
         self.start(XmodemSender(sample(2000), cancel_at=3))
         self.download()
-        self.assertIn("The sender cancelled.", self.screen())
+        self.assertIn("The sender canceled.", self.screen())
         self.assertNotIn("download.bin", self.pico.files)
 
     def test_break_cancels(self):
@@ -168,8 +168,8 @@ class XmodemTest(unittest.TestCase):
         self.key("ENTER")
         m.run_frames(3)
         m.press("SPACE", "CAPS")
-        m.run_until(lambda: "Cancelled." in self.screen(), limit=500)
-        self.assertIn("Cancelled.", self.screen())
+        m.run_until(lambda: "Canceled." in self.screen(), limit=500)
+        self.assertIn("Canceled.", self.screen())
         self.assertTrue(self.sender.received.endswith(b"\x18" * 5))
 
     def test_too_many_errors(self):

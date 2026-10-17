@@ -1,4 +1,4 @@
-; ansi.asm - ANSI-BBS emulation: a VT100 subset with colour (ECMA-48)
+; ansi.asm - ANSI-BBS emulation: a VT100 subset with color (ECMA-48)
 ;
 ; ESC sequences: [ (CSI), ] (OSC, skipped to BEL or ST), ( ) # (one more
 ; byte, skipped), 7 8 (save/restore), D E M (index, next line, reverse
@@ -461,7 +461,7 @@ ansi_sgr:
         inc hl
         jr .next
 .indexed:
-        ld a,b                      ; 5;n: the first 16 are the ANSI colours
+        ld a,b                      ; 5;n: the first 16 are the ANSI colors
         or a
         jp z,sgr_apply
         ld a,(hl)
@@ -533,7 +533,7 @@ sgr_one:
         ret c
         cp 108
         ret nc
-        sub 100-40                  ; bright paper: the colour only
+        sub 100-40                  ; bright paper: the color only
 .bg:
         sub 40
         ld (sgr_bg),a

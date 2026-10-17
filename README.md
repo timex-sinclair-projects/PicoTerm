@@ -6,7 +6,7 @@ and 64-column displays, PicoVideo's 80 columns, ANSI-BBS/VT52/TTY emulation and 
 downloads to the TS-Pico's SD card.
 
 The plan is [docs/DESIGN.md](docs/DESIGN.md). Status: **M6**, all the planned milestones:
-- ANSI-BBS emulation (the default), with colour, VT52 or TTY;
+- ANSI-BBS emulation (the default), with color, VT52 or TTY;
 - the CP437 character set;
 - 32 or 64 columns, or 80 with PicoVideo;
 - the bell on the AY;
@@ -102,7 +102,7 @@ All of it runs in about a second.
 font.
 
 `tests/test_xmodem.py` covers downloads: CRC, 1K and checksum blocks; damaged, cut and
-repeated blocks; cancelling from either end; the size limit; replacing a file; and the
+repeated blocks; canceling from either end; the size limit; replacing a file; and the
 64-column switch. The fake BBS sends by XMODEM, and the fake TS-Pico checks the SAVE
 byte by byte and keeps the file.
 

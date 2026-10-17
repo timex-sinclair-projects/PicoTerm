@@ -1,7 +1,7 @@
 ; phonebook.asm - 20 hosts, each with its own terminal settings
 ;
-; An entry is PB_SIZE bytes at PHONEBOOK (uninitialised data, cleared at
-; start-up and filled from picoterm.cfg). Dialling one applies its
+; An entry is PB_SIZE bytes at PHONEBOOK (uninitialized data, cleared at
+; start-up and filled from picoterm.cfg). Dialing one applies its
 ; settings, then sends ATDT"host:port" (ATD for raw TCP) and goes back to
 ; the terminal, where Zimodem's CONNECT or NO ANSWER appears.
 
@@ -464,7 +464,7 @@ pb_form_script:
         db 16, 20, ATTR_WIN, "cancel",0
         db 0FFh
 
-; pb_dial: the entry at HL. C = dialling (back to the terminal), NC = not
+; pb_dial: the entry at HL. C = dialing (back to the terminal), NC = not
 ; possible (a message has been shown).
 pb_dial:
         ld a,(hayes_online)
@@ -503,7 +503,7 @@ pb_dial:
         ld (de),a
         inc de
 .raw:
-        ; X: Zimodem obeys the card's XOFF/XON only on a connection dialled
+        ; X: Zimodem obeys the card's XOFF/XON only on a connection dialed
         ; with it (its own flag; ATF1 isn't enough), and passes them to the
         ; host otherwise (firmware #301)
         ld a,(flow_on)
@@ -548,7 +548,7 @@ pb_dial:
         call ui_close
 .shown:
         call term_fresh_line
-        ld hl,txt_dialling
+        ld hl,txt_dialing
         call term_puts
         ld hl,(pb_dial_entry)
         call term_puts              ; the name
@@ -592,4 +592,4 @@ txt_no:         db "No ",0
 txt_bs:         db "BS (08h) ",0
 txt_del:        db "DEL (7Fh)",0
 txt_atd:        db "ATD",0
-txt_dialling:   db "Dialling ",0
+txt_dialing:   db "Dialing ",0

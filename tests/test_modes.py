@@ -59,7 +59,7 @@ class ModesTest(unittest.TestCase):
     def test_cycle_with_picovideo(self):
         m = self.start(picovideo=True)
         self.next_mode()
-        self.assertEqual(m.decr & 0x3F, 0x07)         # PicoVideo 64 with colour
+        self.assertEqual(m.decr & 0x3F, 0x07)         # PicoVideo 64 with color
         self.next_mode()
         self.assertEqual((m.mode(), m.cols()), (VM_80, 80))
         self.assertEqual(m.decr & 0x3F, 0x05)
@@ -138,7 +138,7 @@ class ModesTest(unittest.TestCase):
         self.start(cols=VM_64)
         self.exercise()
 
-    def test_drawing_in_64_colour(self):
+    def test_drawing_in_64_color(self):
         m = self.start(picovideo=True, cols=VM_64)
         self.exercise()
         self.feed(CSI + b"1;1H" + CSI + b"1;33;44mXY")

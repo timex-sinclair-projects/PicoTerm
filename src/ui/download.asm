@@ -209,7 +209,7 @@ dl_script:
         db DL_ROW+7, 8, ATTR_WIN, "cancels",0
         db 0FFh
 
-dl_results:     dw txt_xm_cancelled, txt_xm_break, txt_xm_too_big
+dl_results:     dw txt_xm_canceled, txt_xm_break, txt_xm_too_big
                 dw txt_xm_errors, txt_xm_no_start
 
 dl_old_mode:    db 0
@@ -231,8 +231,8 @@ txt_dl_not_saved: db "Couldn't save the file.",0
 txt_dl_blocks:  db "Blk ",0
 txt_dl_bytes_n: db "  Bytes ",0
 txt_dl_errors:  db "  Err ",0
-txt_xm_cancelled: db "The sender cancelled.",0
-txt_xm_break:   db "Cancelled.",0
+txt_xm_canceled: db "The sender canceled.",0
+txt_xm_break:   db "Canceled.",0
 txt_xm_too_big: db "Too big for memory (6912).",0
-txt_xm_errors:  db "Too many errors. Cancelled.",0
+txt_xm_errors:  db "Too many errors. Canceled.",0
 txt_xm_no_start: db "The sender didn't start.",0

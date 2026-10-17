@@ -1,7 +1,7 @@
 ; settings.asm - the Settings screen
 ;
 ; Each key changes one setting at once. Columns, PicoVideo and the 64-column
-; colour take effect when the screen closes (the mode is set again); the
+; color take effect when the screen closes (the mode is set again); the
 ; emulation is told to Zimodem (the telnet terminal type) if offline. S
 ; saves everything, phonebook too, to picoterm.cfg on the TS-Pico.
 
@@ -99,7 +99,7 @@ settings_run:
         call ui_message
         jp .draw
 .back:
-        ; the column mode and its colours may have changed: set the mode
+        ; the column mode and its colors may have changed: set the mode
         ; again (that redraws, so the menu draws itself afresh after)
         ld a,(set_cols)
         call vid_set_mode

@@ -173,7 +173,7 @@ class FakeZimodem:
         bytes sent before then are lost. Then Zimodem's banner arrives."""
         self.deaf_frames = deaf_frames
         self.f1 = False                     # ATF1: XON/XOFF on the serial side
-        self.conn_x = False                 # the call was dialled with X
+        self.conn_x = False                 # the call was dialed with X
         self.paused = False
         self.overshoot = 0
         self.queue_early = queue_early      # the card holds bytes until line-up
@@ -182,7 +182,7 @@ class FakeZimodem:
         # WiFi networks in range: ssid -> (rssi, password or None if open)
         self.networks = networks if networks is not None else {
             "HomeNet": (-48, "secret12"), "Cafe Free": (-71, None),
-            "Neighbour": (-80, "x")}
+            "Neighbor": (-80, "x")}
         self.joined = None
         self.saved = False
         self.lost = bytearray()
@@ -480,11 +480,11 @@ class FakePico:
         if not ok:
             status = 2                                  # R
         elif native is None or native["session"] != session:
-            status = 3                                  # (a TAP SAVE: not modelled)
+            status = 3                                  # (a TAP SAVE: not modeled)
         elif native["refuse"]:
             status = 9                                  # D
         elif hdr[0] != 3 or native["mod"] != 0xAF:
-            status = 8                                  # A: only CODE modelled
+            status = 8                                  # A: only CODE modeled
         else:
             status = 1
         self.tx.append(status)
@@ -517,7 +517,7 @@ class FakePico:
         self.state = "tail"
 
     # --- the channel commands (Programmer's Manual chapter 6), text mode:
-    # CR <-> newline. Binary mode and TAB seeks aren't modelled.
+    # CR <-> newline. Binary mode and TAB seeks aren't modeled.
 
     def channel(self, word, text, stream, n):
         """Run a channel command. True if it queued a data answer itself;
@@ -641,7 +641,7 @@ class XmodemSender:
         n = self.i + 1
         if self.cancel_at == n:
             self.out.extend([self.CAN, self.CAN])
-            self.state = "cancelled"
+            self.state = "canceled"
             return
         f = self.frame(self.i)
         if n in self.corrupt:
@@ -655,10 +655,10 @@ class XmodemSender:
 
     def receive(self, b):
         self.received.append(b)
-        if self.silent or self.state in ("done", "cancelled", "ended"):
+        if self.silent or self.state in ("done", "canceled", "ended"):
             return
         if b == self.CAN:                   # the receiver gives up: in any state
-            self.state = "cancelled"
+            self.state = "canceled"
             return
         if self.state == "wait":
             if b == ord("C") and not self.checksum_only:
@@ -689,7 +689,7 @@ class XmodemSender:
                 self.naks += 1
                 self.send_block()
             elif b == self.CAN:
-                self.state = "cancelled"
+                self.state = "canceled"
         elif self.state == "eot":
             if b == self.ACK:
                 self.state = "done"

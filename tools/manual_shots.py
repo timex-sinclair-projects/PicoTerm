@@ -25,7 +25,7 @@ PHONEBOOK = (b"phone=Test BBS|bbs.example:23|1|2|0|8|0\n"
 
 
 def bbs_menu(width):
-    """A BBS main menu, the kind a telnet BBS sends, centred for the width."""
+    """A BBS main menu, the kind a telnet BBS sends, centered for the width."""
     inner = 30
     left = (width - inner - 2) // 2 + 1
 
@@ -35,11 +35,11 @@ def bbs_menu(width):
     out += at(2, b"\xc9" + b"\xcd" * inner + b"\xbb")
     out += at(3, b"\xba" + E + b"1;33m" + b" THE TEST BBS".center(inner) + E + b"1;36m\xba")
     out += at(4, b"\xcc" + b"\xcd" * inner + b"\xb9")
-    for i, (key, label, colour) in enumerate([
+    for i, (key, label, color) in enumerate([
             (b"M", b"Message areas", b"32"), (b"F", b"File library", b"32"),
             (b"W", b"Who's online", b"33"), (b"G", b"Goodbye", b"31")]):
-        line = (E + b"1;37m [" + E + b"1;" + colour + b"m" + key + E + b"1;37m] "
-                + E + b"0;" + colour + b"m" + label.ljust(inner - 5))
+        line = (E + b"1;37m [" + E + b"1;" + color + b"m" + key + E + b"1;37m] "
+                + E + b"0;" + color + b"m" + label.ljust(inner - 5))
         out += at(5 + i, E + b"1;36m\xba" + line + E + b"1;36m\xba")
     out += at(9, b"\xc8" + b"\xcd" * inner + b"\xbc")
     out += E + b"0;44;37m" + E + b"12;1H" + E + b"K Users: 3   New mail: 12"

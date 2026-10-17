@@ -8,7 +8,7 @@ show it, in any of PicoTerm's column modes. Standard library only.
 import struct
 import zlib
 
-# The 2068's colours, normal and BRIGHT (RGB).
+# The 2068's colors, normal and BRIGHT (RGB).
 PALETTE = [
     [(0, 0, 0), (0, 0, 0xCD), (0xCD, 0, 0), (0xCD, 0, 0xCD),
      (0, 0xCD, 0), (0, 0xCD, 0xCD), (0xCD, 0xCD, 0), (0xCD, 0xCD, 0xCD)],
@@ -17,7 +17,7 @@ PALETTE = [
 ]
 
 
-def _colour(a, ink):
+def _color(a, ink):
     bright = (a >> 6) & 1
     return PALETTE[bright][a & 7] if ink else PALETTE[bright][(a >> 3) & 7]
 
@@ -40,7 +40,7 @@ def pixels(machine):
                 a = mem[0x4780 + r * 80 + col]
                 bits = mem[font + code * 8 + (y & 7)]
                 for bit in range(7, -1, -1):
-                    line.append(_colour(a, bits >> bit & 1))
+                    line.append(_color(a, bits >> bit & 1))
         else:
             base = 0x4000 | (y & 0xC0) << 5 | (y & 0x07) << 8 | (y & 0x38) << 2
             cells = []
@@ -51,11 +51,11 @@ def pixels(machine):
                     a2 = mem[0x7800 + (y >> 3) * 32 + col]
                     cells.append((mem[base + 0x2000 + col], a2))
             for byte, a in cells:
-                if mode == 1 and decr & 7 == 6:           # SCLD: one colour pair
+                if mode == 1 and decr & 7 == 6:           # SCLD: one color pair
                     ink = (decr >> 3) & 7
                     a = ink | (7 - ink) << 3
                 for bit in range(7, -1, -1):
-                    line.append(_colour(a, byte >> bit & 1))
+                    line.append(_color(a, byte >> bit & 1))
         rows.append(line)
     return rows
 

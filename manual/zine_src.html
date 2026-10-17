@@ -100,7 +100,7 @@ table.log td{height:24pt}
   <div class="eyebrow">Timex/Sinclair 2068 · TS-Pico v3 · 2026</div>
   <h1>Pico&shy;Term</h1>
   <div class="sub">User manual</div>
-  <p class="lede">A terminal program for the TS-2068 and the TS-Pico v3 card. The card's WiFi modem runs Zimodem, and PicoTerm uses it to reach telnet BBSes: ANSI colour and box drawing, 32 or 64 columns (80 with PicoVideo), a phonebook, and XMODEM downloads to the SD card.</p>
+  <p class="lede">A terminal program for the TS-2068 and the TS-Pico v3 card. The card's WiFi modem runs Zimodem, and PicoTerm uses it to reach telnet BBSes: ANSI color and box drawing, 32 or 64 columns (80 with PicoVideo), a phonebook, and XMODEM downloads to the SD card.</p>
   <figure class="shot">{{img:bbs_32}}</figure>
   <div class="foot"><span>TS-2068 + TS-Pico v3 · WiFi</span><span>Version 0.6, 2026</span></div>
   <div class="site"><a href="https://timexsinclair.com">timexsinclair.com</a></div>
@@ -145,7 +145,7 @@ table.log td{height:24pt}
     <li><strong>The TS-Pico v3 card</strong>, with firmware that has the TS2050 modem emulation (the 8251 at ports <code>$73</code> and <code>$77</code>), and Zimodem on the card's ESP32. The card's modem has to be in <em>Hayes mode</em>. PicoTerm switches it there itself where the firmware allows.</li>
     <li><strong>A WiFi network</strong> the card can join. PicoTerm can scan for one and join it (section 9).</li>
     <li><strong>An SD card in the TS-Pico</strong>, for <code>picoterm.cfg</code> (your settings and phonebook) and for downloads.</li>
-    <li><em>Optional:</em> <strong>PicoVideo</strong>, for 80 columns and for colour in 64 columns, on its HDMI output.</li>
+    <li><em>Optional:</em> <strong>PicoVideo</strong>, for 80 columns and for color in 64 columns, on its HDMI output.</li>
   </ul>
   <div class="note"><b>A real TS2050?</b>PicoTerm is written for the TS-Pico's modem. It doesn't pulse-dial, and it doesn't watch the TS2050's carrier line, so it won't drive an original 300-baud TS2050. Use MTERM for that.</div>
 </section>
@@ -184,8 +184,8 @@ table.log td{height:24pt}
     <li><strong>To hang up</strong>: <kbd>BREAK</kbd>, then <kbd>H</kbd>. If the BBS hangs up first, you see <code>NO CARRIER</code>.</li>
   </ol>
   <p>Put the hosts you use in the phonebook (section 8) and dial them with one key; it adds the <code>X</code> itself.</p>
-  <div class="note"><b>Why the X</b>When the BBS sends faster than the 2068 draws, the card tells Zimodem to pause and go on (XOFF, XON). Zimodem obeys only on a call dialled with <code>X</code>; without it a fast host can overrun the card. It needs firmware with <code>tpi:modem flow</code>.</div>
-  <figure class="shot small-shot">{{img:connect}}<figcaption>Dialling by hand: ATDTX, CONNECT, the BBS's greeting.</figcaption></figure>
+  <div class="note"><b>Why the X</b>When the BBS sends faster than the 2068 draws, the card tells Zimodem to pause and go on (XOFF, XON). Zimodem obeys only on a call dialed with <code>X</code>; without it a fast host can overrun the card. It needs firmware with <code>tpi:modem flow</code>.</div>
+  <figure class="shot small-shot">{{img:connect}}<figcaption>Dialing by hand: ATDTX, CONNECT, the BBS's greeting.</figcaption></figure>
 </section>
 
 <section id="keys">
@@ -231,20 +231,20 @@ table.log td{height:24pt}
   <p>PicoTerm has three emulations. It uses ANSI unless you choose otherwise in Settings or in a phonebook entry, and it tells Zimodem which one to report to telnet hosts.</p>
   <table>
     <tr><th>Emulation</th><th>What it understands</th></tr>
-    <tr><td><b>ANSI</b></td><td>For BBSes: a VT100 subset with colour, as BBS software expects of "ANSI-BBS".
+    <tr><td><b>ANSI</b></td><td>For BBSes: a VT100 subset with color, as BBS software expects of "ANSI-BBS".
       <ul>
         <li>Cursor moves, positioning, save and restore.</li>
         <li>Erasing; inserting and deleting lines and characters.</li>
         <li>A scrolling region.</li>
-        <li>Colours with bold, blink and reverse.</li>
+        <li>Colors with bold, blink and reverse.</li>
         <li>It answers the cursor-position question, which BBSes use to find the screen size, and identifies itself as a VT100.</li>
       </ul></td></tr>
     <tr><td><b>VT52</b></td><td>The standard set: cursor moves, home, <code>ESC Y</code> addressing, erasing, reverse line feed, identify.</td></tr>
     <tr><td><b>TTY</b></td><td>Text and control codes only; escape sequences show as text.</td></tr>
   </table>
   <p>In every emulation PicoTerm handles <b>BEL</b>, a short tone on the AY; <b>BS</b>; <b>Tab</b>, every 8 columns; <b>LF</b>; <b>CR</b>; and <b>FF</b>, which clears the screen. Text wraps as on a VT100: a character in the last column leaves the cursor there, and the next starts a new line.</p>
-  <h3>Colour and characters</h3>
-  <p>ANSI's eight colours become the 2068's. <b>Bold</b> is BRIGHT, <b>blink</b> is FLASH (or not, in Settings), and <b>reverse</b> swaps ink and paper. BRIGHT lights the whole cell, so bold text on a coloured background brightens the background too.</p>
+  <h3>Color and characters</h3>
+  <p>ANSI's eight colors become the 2068's. <b>Bold</b> is BRIGHT, <b>blink</b> is FLASH (or not, in Settings), and <b>reverse</b> swaps ink and paper. BRIGHT lights the whole cell, so bold text on a colored background brightens the background too.</p>
   <p>PicoTerm uses the PC's CP437 characters, as PicoVideo does for 80 columns, so box lines, shading and accented letters look as BBS authors meant.</p>
 </section>
 
@@ -252,7 +252,7 @@ table.log td{height:24pt}
   <h2><span class="n">06</span>32, 64 and 80 columns</h2>
   <p><kbd>CAPS</kbd>+<kbd>9</kbd> changes mode, keeping what's on screen. Settings <kbd>C</kbd> picks the mode PicoTerm starts in.</p>
   <table>
-    <tr><th>Mode</th><th>Needs</th><th>Colour</th></tr>
+    <tr><th>Mode</th><th>Needs</th><th>Color</th></tr>
     <tr><td><b>32</b></td><td>any 2068</td><td>Per character. Readable on any TV.</td></tr>
     <tr><td><b>64</b></td><td>any 2068</td><td>One ink and paper (Settings <kbd>I</kbd>); per character with PicoVideo.</td></tr>
     <tr><td><b>80</b></td><td>PicoVideo</td><td>Per character, on HDMI. The 2068's own video shows nothing useful. Turn on <b>PicoVideo</b> in Settings.</td></tr>
@@ -293,7 +293,7 @@ table.log td{height:24pt}
     <tr><td class="k"><kbd>E</kbd> / <kbd>X</kbd></td><td><b>Edit</b> / <b>delete</b> (<kbd>Y</kbd> confirms).</td></tr>
   </table>
   <figure class="shot small-shot">{{img:phonebook}}<figcaption>The phonebook.</figcaption></figure>
-  <div class="note"><b>Remember to save</b>Entries live in memory until you save your settings (Settings <kbd>S</kbd>). Dialling while online is refused: “Hang up first.”</div>
+  <div class="note"><b>Remember to save</b>Entries live in memory until you save your settings (Settings <kbd>S</kbd>). Dialing while online is refused: “Hang up first.”</div>
 </section>
 
 <section id="entry">
@@ -372,11 +372,11 @@ table.log td{height:24pt}
     <tr><td><code>No answer from the modem.</code></td><td>No <code>OK</code> in about 12&nbsp;s. Check the modem is in <b>Hayes</b> mode (TS2050 mode hides Zimodem's replies), then type <code>AT</code> <kbd>ENTER</kbd>.</td></tr>
     <tr><td><code>NO ANSWER</code>, <code>ERROR</code></td><td>Zimodem couldn't connect, or didn't understand: check the host, port, quotes and WiFi (<code>ATI</code> shows Zimodem's state).</td></tr>
     <tr><td><code>NO CARRIER</code></td><td>The host hung up.</td></tr>
-    <tr><td><code>Hang up first.</code></td><td>Dialling or WiFi while online: <kbd>BREAK</kbd>, <kbd>H</kbd>.</td></tr>
+    <tr><td><code>Hang up first.</code></td><td>Dialing or WiFi while online: <kbd>BREAK</kbd>, <kbd>H</kbd>.</td></tr>
     <tr><td><code>Couldn't save the settings.</code></td><td>No TS-Pico or SD card, or the card refused.</td></tr>
     <tr><td><code>Too big for memory (6912).</code></td><td>The download was too long for this version.</td></tr>
     <tr><td><code>The sender didn't start.</code></td><td>Nothing from the BBS for about 30&nbsp;s. Start the download on the BBS first.</td></tr>
-    <tr><td><code>Too many errors. Cancelled.</code></td><td>Ten bad blocks in a row. Try again.</td></tr>
+    <tr><td><code>Too many errors. Canceled.</code></td><td>Ten bad blocks in a row. Try again.</td></tr>
   </table>
   <div class="note"><b>Slow text</b>The card passes text to the 2068 no faster than its <code>MODEM_BAUD</code> setting: 300 baud unless changed, 30 characters a second. Raise it in the TS-Pico's <code>config.ini</code>: <code>0</code> (no limit) is safe with flow control. Without it, keep to about 2400, or a fast host can overrun the card.</div>
   <div class="note"><b>Text missing in a fast stream</b>Dial with the <code>X</code> (<code>ATDTX</code>, or the phonebook), and check the card's firmware has <code>tpi:modem flow</code>.</div>
@@ -388,7 +388,7 @@ table.log td{height:24pt}
     <li><b>Downloads only, and at most 6,912 bytes</b>: no upload, YMODEM or ZMODEM, and no capture to a file.</li>
     <li><b>No scrollback.</b> Text that scrolls off the top is gone.</li>
     <li><b>24 rows.</b> BBSes that assume 25 lose the bottom line.</li>
-    <li><b>Colour:</b> no bright background on its own; 64 columns on a stock 2068 has one colour pair.</li>
+    <li><b>Color:</b> no bright background on its own; 64 columns on a stock 2068 has one color pair.</li>
     <li><b>Keyboard:</b> the symbol keys follow the Spectrum's legends, which the 2068 mostly shares; the tables in section 4 are what PicoTerm does.</li>
     <li><b>Screen width:</b> PicoTerm can't tell a telnet host your width itself. Most BBSes ask, or measure it with the cursor-position question, which PicoTerm answers.</li>
     <li><b>The modem:</b> the TS-Pico's, in Hayes mode, with its 8251 emulation. Not a stock TS2050.</li>
@@ -445,7 +445,7 @@ table.log td{height:24pt}
       <tr><td class="k"><kbd>BREAK</kbd></td><td>Back</td></tr>
     </table>
   </div>
-  <h3>Dialling by hand</h3>
+  <h3>Dialing by hand</h3>
   <p><code>ATDTX"host:port"</code> telnet · <code>ATDX"host:port"</code> raw · <code>ATI</code> status · <code>ATW</code> scan WiFi</p>
   <p class="colophon">PicoTerm 0.6 © 2026 · for the TS-2068 and TS-Pico v3 · timexsinclair.com</p>
 </div>
